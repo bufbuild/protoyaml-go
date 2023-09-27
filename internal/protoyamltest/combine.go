@@ -17,7 +17,7 @@ package protoyamltest
 import (
 	"math"
 
-	"github.com/bufbuild/protoyaml-go/internal/gen/proto/bufext/cel/expr/conformance/proto3"
+	"github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1/proto3"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/structpb"

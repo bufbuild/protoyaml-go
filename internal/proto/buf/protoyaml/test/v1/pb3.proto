@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package buf.protoyaml.test.v1;
 
-import "bufext/cel/expr/conformance/proto3/test_all_types.proto";
+import "buf/protoyaml/test/v1/proto3/test_all_types.proto";
 
 message Proto3Test {
-  repeated bufext.cel.expr.conformance.proto3.TestAllTypes values = 1;
+  repeated buf.protoyaml.test.v1.proto3.TestAllTypes values = 1;
 }

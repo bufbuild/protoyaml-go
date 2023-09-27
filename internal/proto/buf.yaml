@@ -3,4 +3,4 @@ deps:
   - buf.build/bufbuild/protovalidate
 lint:
   ignore:
-    - bufext
+    - buf/protoyaml/test/v1/proto3

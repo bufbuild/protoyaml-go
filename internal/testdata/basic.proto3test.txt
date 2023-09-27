@@ -136,12 +136,12 @@ internal/testdata/basic.proto3test.yaml:100:22 expected scalar, got sequence
 internal/testdata/basic.proto3test.yaml:101:22 expected scalar, got sequence
  101 |   - repeated_int32: [[1]]
      |                      ^.................. expected scalar, got sequence
-internal/testdata/basic.proto3test.yaml:102:25 expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got scalar
+internal/testdata/basic.proto3test.yaml:102:25 expected fields for buf.protoyaml.test.v1.proto3.TestAllTypes.NestedMessage, got scalar
  102 |   - standalone_message: 1
-     |                         ^............... expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got scalar
-internal/testdata/basic.proto3test.yaml:103:25 expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got sequence
+     |                         ^............... expected fields for buf.protoyaml.test.v1.proto3.TestAllTypes.NestedMessage, got scalar
+internal/testdata/basic.proto3test.yaml:103:25 expected fields for buf.protoyaml.test.v1.proto3.TestAllTypes.NestedMessage, got sequence
  103 |   - standalone_message: []
-     |                         ^............... expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got sequence
+     |                         ^............... expected fields for buf.protoyaml.test.v1.proto3.TestAllTypes.NestedMessage, got sequence
 internal/testdata/basic.proto3test.yaml:105:22 invalid duration: missing trailing 's'
  105 |   - single_duration: 1
      |                      ^.................. invalid duration: missing trailing 's'
