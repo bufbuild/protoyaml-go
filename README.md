@@ -43,7 +43,7 @@ func main() {
 }
 ```
 
-The a detailed error message will be returned, including the file name (if `Path` is set on
+Either `nil`, or a error with a detailed message will be returned. The error message includes the file name (if `Path` is set on
 `UnmarshalOptions`), line number, column number and snippet of the YAML that caused the error, for
 every error found in the file. For example, when unmarshalling the following YAML file:
 
@@ -135,7 +135,7 @@ func main() {
 }
 ```
 
-Protovalidate violations will now showup along side the ProtoYAML errors, for example:
+Protovalidate violations will now show up along side the ProtoYAML errors, for example:
 
 ```
 testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
