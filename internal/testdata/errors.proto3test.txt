@@ -1,0 +1,15 @@
+internal/testdata/errors.proto3test.yaml:2:1 unknown field "bad", expended one of [values]
+   2 | bad: wat
+     | ^....................................... unknown field "bad", expended one of [values]
+internal/testdata/errors.proto3test.yaml:3:4 expected sequence, got scalar
+   3 | 1: 2
+     |    ^.................................... expected sequence, got scalar
+internal/testdata/errors.proto3test.yaml:4:1 unknown field "-1", expended one of [values]
+   4 | -1: 3
+     | ^....................................... unknown field "-1", expended one of [values]
+internal/testdata/errors.proto3test.yaml:5:1 expected scalar, got sequence
+   5 | [1, 2]: 2
+     | ^....................................... expected scalar, got sequence
+internal/testdata/errors.proto3test.yaml:7:5 unknown field "wat", expended one of [single_int32 single_int64 single_uint32 single_uint64 single_sint32 single_sint64 single_fixed32 ...]
+   7 |   - wat: 1
+     |     ^................................... unknown field "wat", expended one of [single_int32 single_int64 single_uint32 single_uint64 single_sint32 single_sint64 single_fixed32 ...]

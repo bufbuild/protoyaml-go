@@ -1,0 +1,13 @@
+cases:
+  - float_gt_lt: 0
+  - float_gt_lt: 10
+  - float_gt_lt: 10.5
+  - float_gt_lt: -0.5
+  - floatGtLt: 10.5
+  - 2: -Infinity
+ # - float_gt_lt: NaN
+  - float_gt_lt: 1
+    string_map:
+      c1: B
+  - string_map:
+      b: B1

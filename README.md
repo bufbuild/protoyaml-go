@@ -1,0 +1,112 @@
+# ProtoYAML
+
+[![Build](https://github.com/bufbuild/protoyaml-go/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/bufbuild/protoyaml-go/actions/workflows/ci.yaml)
+[![Report Card](https://goreportcard.com/badge/github.com/bufbuild/protoyaml-go)](https://goreportcard.com/report/github.com/bufbuild/protoyaml-go)
+[![GoDoc](https://pkg.go.dev/badge/github.com/bufbuild/protoyaml-go.svg)](https://pkg.go.dev/github.com/bufbuild/protoyaml-go)
+
+Marshal and unmarshal Protocol Buffers as YAML.
+
+Fully compatible with [protojson](https://github.com/protocolbuffers/protobuf-go/tree/master/encoding/protojson).
+
+Provides fine-grained error details, with file, line, column and snippet information.
+
+## Usage
+
+```go
+package main
+
+import (
+  "errors",
+  "fmt",
+  "log",
+
+  "github.com/bufbuild/protoyaml-go",
+)
+
+func main() {
+  // Marshal a proto message to YAML.
+  yamlBytes, err := protoyaml.Marshal(
+    &pb.MyMessage{
+      MyField: "hello world",
+    },
+  )
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Println(string(yamlBytes))
+
+  var myMessage pb.MyMessage
+  options := protoyaml.UnmarshalOptions{
+    Path: "testdata/basic.proto3test.yaml",
+  }
+  if err := options.Unmarshal(yamlBytes, &myMessage); err != nil {
+    log.Fatal(err)
+  }
+}
+```
+
+The a detailed error message will be returned, including the file name (if `Path` is set on `UnmarshalOptions`), line number, column number and snippet of the YAML that caused the error, for every error found in the file. For example, when
+unmarshalling the following YAML file:
+
+```yaml
+values:
+  - single_bool: true
+  - single_bool: false
+  - single_bool: 1
+  - single_bool: 0
+  - single_bool: "true"
+  - single_bool: "false"
+  - single_bool: True
+  - single_bool: False
+  - single_bool: TRUE
+  - single_bool: FALSE
+  - single_bool: yes
+  - single_bool: no
+```
+
+The following errors are returned:
+
+```
+testdata/basic.proto3test.yaml:5:18: expected bool, got "1"
+   5 |   - single_bool: 1
+     |                  ^...................... expected bool, got "1"
+testdata/basic.proto3test.yaml:6:18: expected bool, got "0"
+   6 |   - single_bool: 0
+     |                  ^...................... expected bool, got "0"
+testdata/basic.proto3test.yaml:7:18: expected tag !!bool, got !!str
+   7 |   - single_bool: "true"
+     |                  ^...................... expected tag !!bool, got !!str
+testdata/basic.proto3test.yaml:8:18: expected tag !!bool, got !!str
+   8 |   - single_bool: "false"
+     |                  ^...................... expected tag !!bool, got !!str
+testdata/basic.proto3test.yaml:9:18: expected bool, got "True"
+   9 |   - single_bool: True
+     |                  ^...................... expected bool, got "True"
+testdata/basic.proto3test.yaml:10:18: expected bool, got "False"
+  10 |   - single_bool: False
+     |                  ^...................... expected bool, got "False"
+testdata/basic.proto3test.yaml:11:18: expected bool, got "TRUE"
+  11 |   - single_bool: TRUE
+     |                  ^...................... expected bool, got "TRUE"
+testdata/basic.proto3test.yaml:12:18: expected bool, got "FALSE"
+  12 |   - single_bool: FALSE
+     |                  ^...................... expected bool, got "FALSE"
+testdata/basic.proto3test.yaml:13:18: expected bool, got "yes"
+  13 |   - single_bool: yes
+     |                  ^...................... expected bool, got "yes"
+testdata/basic.proto3test.yaml:14:18: expected bool, got "no"
+  14 |   - single_bool: no
+     |                  ^...................... expected bool, got "no"
+```
+
+In this case, we can see that, only `true` and `false` are valid values for the `single_bool` field.
+
+For more examples, see the [internal/testdata](internal/testdata) directory.
+
+## Status: Beta
+
+ProtoYAML is not yet stable, however the final shape is unlikely to change drastically - future edits will be somewhat minor.
+
+## Legal
+
+Offered under the [Apache 2 license](https://github.com/bufbuild/protoyaml-go/blob/main/LICENSE)

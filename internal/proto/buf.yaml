@@ -1,0 +1,6 @@
+version: v1
+deps:
+  - buf.build/bufbuild/protovalidate
+lint:
+  ignore:
+    - buf/protoyaml/test/v1/proto3/test_all_types.proto

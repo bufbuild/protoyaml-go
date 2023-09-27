@@ -1,0 +1,63 @@
+internal/testdata/dynamic.const.yaml:10:12 expected boolean for google.protobuf.BoolValue.value, got sequence
+  10 |     value: []
+     |            ^............................ expected boolean for google.protobuf.BoolValue.value, got sequence
+internal/testdata/dynamic.const.yaml:13:12 expected boolean for google.protobuf.BoolValue.value, got mapping
+  13 |     value: {}
+     |            ^............................ expected boolean for google.protobuf.BoolValue.value, got mapping
+internal/testdata/dynamic.const.yaml:16:12 expected boolean for google.protobuf.BoolValue.value, got null
+  16 |     value: null
+     |            ^............................ expected boolean for google.protobuf.BoolValue.value, got null
+internal/testdata/dynamic.const.yaml:19:12 expected int32 for google.protobuf.Int32Value.value, got bool
+  19 |     value: true
+     |            ^............................ expected int32 for google.protobuf.Int32Value.value, got bool
+internal/testdata/dynamic.const.yaml:31:12 expected scalar for google.protobuf.StringValue.value, got sequence
+  31 |     value: []
+     |            ^............................ expected scalar for google.protobuf.StringValue.value, got sequence
+internal/testdata/dynamic.const.yaml:33:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  33 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:36:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  36 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:39:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  39 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:42:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  42 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:45:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  45 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:48:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  48 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:51:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  51 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:54:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  54 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:57:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  57 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:60:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  60 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:66:12 expected boolean for google.protobuf.BoolValue.value, got string
+  66 |     value: True
+     |            ^............................ expected boolean for google.protobuf.BoolValue.value, got string
+internal/testdata/dynamic.const.yaml:68:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  68 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:70:7 expected scalar, got sequence
+  70 |       []: true
+     |       ^................................. expected scalar, got sequence
+internal/testdata/dynamic.const.yaml:74:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  74 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:77:14 expected boolean for google.protobuf.BoolValue.value, got string
+  77 |       value: hi
+     |              ^.......................... expected boolean for google.protobuf.BoolValue.value, got string
+internal/testdata/dynamic.const.yaml:79:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+  79 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
+     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
