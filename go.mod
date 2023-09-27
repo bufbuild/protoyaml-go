@@ -1,6 +1,6 @@
 module github.com/bufbuild/protoyaml-go
 
-go 1.20
+go 1.19
 
 require (
 	github.com/bufbuild/protovalidate-go v0.3.2
