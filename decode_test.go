@@ -23,7 +23,6 @@ import (
 
 	"github.com/bufbuild/protovalidate-go"
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -101,8 +100,6 @@ func testRunYAMLFile(t *testing.T, testFile string) {
 	}
 	expectedText := string(expectedData)
 	if expectedText != errorText {
-		dmp := diffmatchpatch.New()
-		diffs := dmp.DiffMain(expectedText, errorText, false)
-		t.Errorf("%s: Test %s failed:\n%s", expectedFileName, testFile, dmp.DiffPrettyText(diffs))
+		t.Errorf("%s: Test %s failed:\nExpected:\n%s\nActual:\n%s", expectedFileName, testFile, expectedText, errorText)
 	}
 }

@@ -13,51 +13,114 @@ internal/testdata/dynamic.const.yaml:19:12 expected int32 for google.protobuf.In
 internal/testdata/dynamic.const.yaml:31:12 expected scalar for google.protobuf.StringValue.value, got sequence
   31 |     value: []
      |            ^............................ expected scalar for google.protobuf.StringValue.value, got sequence
-internal/testdata/dynamic.const.yaml:33:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  33 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:36:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  36 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:39:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  39 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:42:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  42 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:45:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  45 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:48:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  48 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:51:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  51 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:54:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  54 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:57:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  57 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-internal/testdata/dynamic.const.yaml:60:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  60 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:37:26 expected tag !!bool, got !!str
+  37 |     single_bool_wrapper: "true"
+     |                          ^.............. expected tag !!bool, got !!str
+internal/testdata/dynamic.const.yaml:40:21 expected sequence for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got scalar
+  40 |     repeated_int32: 1
+     |                     ^................... expected sequence for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got scalar
+internal/testdata/dynamic.const.yaml:43:21 expected sequence for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got mapping
+  43 |     repeated_int32: {}
+     |                     ^................... expected sequence for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got mapping
+internal/testdata/dynamic.const.yaml:46:30 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, but: precision loss
+  46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
+     |                              ^...................... expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, but: precision loss
+internal/testdata/dynamic.const.yaml:46:35 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got string
+  46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
+     |                                   ^................. expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got string
+internal/testdata/dynamic.const.yaml:46:39 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got float
+  46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
+     |                                       ^............. expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got float
+internal/testdata/dynamic.const.yaml:46:49 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got float
+  46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
+     |                                                 ^... expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got float
+internal/testdata/dynamic.const.yaml:49:35 expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got string
+  49 |     repeated_float: [1, "1", 1.5, hi, Infinity, NaN, 16777215, 16777216, 16777217]
+     |                                   ^............................................... expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got string
+internal/testdata/dynamic.const.yaml:49:74 expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got integer
+  49 |     repeated_float: [1, "1", 1.5, hi, Infinity, NaN, 16777215, 16777216, 16777217]
+     |                                                                          ^........ expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got integer
+internal/testdata/dynamic.const.yaml:52:36 expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got string
+  52 |     repeated_double: [1, "1", 1.5, hi, Infinity, NaN, 9007199254740991, 9007199254740992, 9007199254740993]
+     |                                    ^....................................................................... expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got string
+internal/testdata/dynamic.const.yaml:52:91 expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got integer
+  52 |     repeated_double: [1, "1", 1.5, hi, Infinity, NaN, 9007199254740991, 9007199254740992, 9007199254740993]
+     |                                                                                           ^................ expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got integer
+internal/testdata/dynamic.const.yaml:55:22 expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
+     |                      ^......................................................... expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+internal/testdata/dynamic.const.yaml:55:25 expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
+     |                         ^...................................................... expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+internal/testdata/dynamic.const.yaml:55:30 expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 1
+  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
+     |                              ^................................................. expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 1
+internal/testdata/dynamic.const.yaml:55:35 expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
+     |                                   ^............................................ expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+internal/testdata/dynamic.const.yaml:55:49 expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
+     |                                                 ^.............................. expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 0
+internal/testdata/dynamic.const.yaml:55:68 expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 4
+  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
+     |                                                                    ^........... expected base64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_bytes, but illegal base64 data at input byte 4
 internal/testdata/dynamic.const.yaml:66:12 expected boolean for google.protobuf.BoolValue.value, got string
   66 |     value: True
      |            ^............................ expected boolean for google.protobuf.BoolValue.value, got string
-internal/testdata/dynamic.const.yaml:68:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  68 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
 internal/testdata/dynamic.const.yaml:70:7 expected scalar, got sequence
   70 |       []: true
      |       ^................................. expected scalar, got sequence
-internal/testdata/dynamic.const.yaml:74:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  74 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:71:7 expected boolean for bufext.cel.expr.conformance.proto3.TestAllTypes.MapBoolBoolEntry.key, got number
+  71 |       1: true
+     |       ^................................. expected boolean for bufext.cel.expr.conformance.proto3.TestAllTypes.MapBoolBoolEntry.key, got number
+internal/testdata/dynamic.const.yaml:72:13 expected boolean for bufext.cel.expr.conformance.proto3.TestAllTypes.MapBoolBoolEntry.value, got number
+  72 |       true: 1
+     |             ^........................... expected boolean for bufext.cel.expr.conformance.proto3.TestAllTypes.MapBoolBoolEntry.value, got number
 internal/testdata/dynamic.const.yaml:77:14 expected boolean for google.protobuf.BoolValue.value, got string
   77 |       value: hi
      |              ^.......................... expected boolean for google.protobuf.BoolValue.value, got string
-internal/testdata/dynamic.const.yaml:79:5 unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
-  79 |     "@type": type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes
-     |     ^................................................................. unknown type "type.googleapis.com/protoyaml.test.v1.proto3.TestAllTypes": proto: not found
+internal/testdata/dynamic.const.yaml:80:22 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, but: precision loss
+  80 |     repeated_int32: [1.5, -2147483648, -2147483649, 2147483647, 2147483648]
+     |                      ^..................................................... expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, but: precision loss
+internal/testdata/dynamic.const.yaml:80:40 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got int64
+  80 |     repeated_int32: [1.5, -2147483648, -2147483649, 2147483647, 2147483648]
+     |                                        ^................................... expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got int64
+internal/testdata/dynamic.const.yaml:80:65 expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got int64
+  80 |     repeated_int32: [1.5, -2147483648, -2147483649, 2147483647, 2147483648]
+     |                                                                 ^.......... expected int32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int32, got int64
+internal/testdata/dynamic.const.yaml:81:22 expected int64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int64, but: precision loss
+  81 |     repeated_int64: [1.5, -9223372036854775808, -9223372036854775809, 9223372036854775807, 9223372036854775808]
+     |                      ^......................................................................................... expected int64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int64, but: precision loss
+internal/testdata/dynamic.const.yaml:81:49 expected int64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int64, but: out of range
+  81 |     repeated_int64: [1.5, -9223372036854775808, -9223372036854775809, 9223372036854775807, 9223372036854775808]
+     |                                                 ^.............................................................. expected int64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int64, but: out of range
+internal/testdata/dynamic.const.yaml:81:92 expected int64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int64, got uint64
+  81 |     repeated_int64: [1.5, -9223372036854775808, -9223372036854775809, 9223372036854775807, 9223372036854775808]
+     |                                                                                            ^................... expected int64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_int64, got uint64
+internal/testdata/dynamic.const.yaml:82:23 expected uint32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint32, but: precision loss
+  82 |     repeated_uint32: [1.5, -1, 0, 4294967295, 4294967296]
+     |                       ^.................................. expected uint32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint32, but: precision loss
+internal/testdata/dynamic.const.yaml:82:28 expected uint32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint32, got negative
+  82 |     repeated_uint32: [1.5, -1, 0, 4294967295, 4294967296]
+     |                            ^............................. expected uint32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint32, got negative
+internal/testdata/dynamic.const.yaml:82:47 expected uint32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint32, got uint64
+  82 |     repeated_uint32: [1.5, -1, 0, 4294967295, 4294967296]
+     |                                               ^.......... expected uint32 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint32, got uint64
+internal/testdata/dynamic.const.yaml:83:23 expected uint64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint64, but: precision loss
+  83 |     repeated_uint64: [1.5, -1, 0, 18446744073709551615, 18446744073709551616]
+     |                       ^...................................................... expected uint64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint64, but: precision loss
+internal/testdata/dynamic.const.yaml:83:28 expected uint64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint64, got negative
+  83 |     repeated_uint64: [1.5, -1, 0, 18446744073709551615, 18446744073709551616]
+     |                            ^................................................. expected uint64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint64, got negative
+internal/testdata/dynamic.const.yaml:83:57 expected uint64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint64, but: precision loss
+  83 |     repeated_uint64: [1.5, -1, 0, 18446744073709551615, 18446744073709551616]
+     |                                                         ^.................... expected uint64 for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_uint64, but: precision loss
+internal/testdata/dynamic.const.yaml:84:47 expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got integer
+  84 |     repeated_float: [1.5, 16777215, 16777216, 16777217, 1.7014118346046923e+38, 1.7014118346046923e+39]
+     |                                               ^........................................................ expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got integer
+internal/testdata/dynamic.const.yaml:84:81 expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got float64
+  84 |     repeated_float: [1.5, 16777215, 16777216, 16777217, 1.7014118346046923e+38, 1.7014118346046923e+39]
+     |                                                                                 ^...................... expected float for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_float, got float64
+internal/testdata/dynamic.const.yaml:85:64 expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got integer
+  85 |     repeated_double: [1.5, 9007199254740991, 9007199254740992, 9007199254740993]
+     |                                                                ^................ expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got integer

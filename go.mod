@@ -1,6 +1,6 @@
 module github.com/bufbuild/protoyaml-go
 
-go 1.20
+go 1.19
 
 require (
 	github.com/bufbuild/protovalidate-go v0.3.2
@@ -19,9 +19,6 @@ require (
 )
 
 require (
-	buf.build/gen/go/alfus/cel/protocolbuffers/go v1.31.0-20230717225303-85a8766c4033.1
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230914171853-63dfe56cc2c4.1
 	github.com/google/go-cmp v0.5.9
-	github.com/sergi/go-diff v1.3.1
-	github.com/spf13/pflag v1.0.5
 )
