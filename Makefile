@@ -70,6 +70,7 @@ upgrade: ## Upgrade dependencies
 .PHONY: checkgenerate
 checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
+	git diff
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
 $(BIN):
