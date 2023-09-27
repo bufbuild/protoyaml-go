@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"buf.build/gen/go/alfus/cel/protocolbuffers/go/cel/expr/conformance/proto3"
+	"github.com/bufbuild/protoyaml-go/internal/gen/proto/bufext/cel/expr/conformance/proto3"
 	"github.com/bufbuild/protoyaml-go/internal/protoyamltest"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/encoding/protojson"
