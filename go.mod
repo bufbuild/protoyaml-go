@@ -21,5 +21,4 @@ require (
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230914171853-63dfe56cc2c4.1
 	github.com/google/go-cmp v0.5.9
-	github.com/sergi/go-diff v1.3.1
 )
