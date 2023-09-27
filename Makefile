@@ -53,13 +53,16 @@ install: ## Install all binaries
 .PHONY: generate
 generate: $(BIN)/license-header $(BIN)/buf ## Regenerate code and licenses
 	rm -rf internal/gen
-	find internal/testdata -name "*.txt" -type f -delete
 	buf generate
-	go run internal/cmd/generate-txt-testdata/main.go internal/testdata
 	license-header \
 		--license-type apache \
 		--copyright-holder "Buf Technologies, Inc." \
 		--year-range "$(COPYRIGHT_YEARS)" $(LICENSE_IGNORE)
+
+.PHONY: generate-golden
+generate-golden:
+	find internal/testdata -name "*.txt" -type f -delete
+	go run internal/cmd/generate-txt-testdata/main.go internal/testdata
 
 .PHONY: upgrade
 upgrade: ## Upgrade dependencies
