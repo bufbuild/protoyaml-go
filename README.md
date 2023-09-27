@@ -16,8 +16,6 @@ Provides fine-grained error details, with file, line, column and snippet informa
 package main
 
 import (
-  "errors",
-  "fmt",
   "log",
 
   "github.com/bufbuild/protoyaml-go",
@@ -33,20 +31,22 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-  fmt.Println(string(yamlBytes))
 
-  var myMessage pb.MyMessage
+  // Unmarshal a proto message from YAML.
   options := protoyaml.UnmarshalOptions{
     Path: "testdata/basic.proto3test.yaml",
   }
+  var myMessage pb.MyMessage
   if err := options.Unmarshal(yamlBytes, &myMessage); err != nil {
     log.Fatal(err)
   }
 }
 ```
 
-The a detailed error message will be returned, including the file name (if `Path` is set on `UnmarshalOptions`), line number, column number and snippet of the YAML that caused the error, for every error found in the file. For example, when
-unmarshalling the following YAML file:
+Either `nil`, or an error with a detailed message will be returned. The error message includes the
+file name (if `Path` is set on `UnmarshalOptions`), line number, column number and snippet of the
+YAML that caused the error, for every error found in the file. For example, when unmarshalling the
+following YAML file:
 
 ```yaml
 values:
@@ -102,6 +102,47 @@ testdata/basic.proto3test.yaml:14:18: expected bool, got "no"
 In this case, we can see that, only `true` and `false` are valid values for the `single_bool` field.
 
 For more examples, see the [internal/testdata](internal/testdata) directory.
+
+## Validation
+
+ProtoYAML can integrate with external validation libraries, such as
+[Protovalidate](https://github.com/bufbuild/protovalidate-go), to provide additional rich error
+information. Simply provide a `Validator` to the `UnmarshalOptions`:
+
+```go
+package main
+
+import (
+  "log",
+
+  "github.com/bufbuild/protoyaml-go",
+  "github.com/bufbuild/protovalidate-go",
+)
+
+func main() {
+  validator, err := protovalidate.NewValidator()
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  var myMessage pb.MyMessage
+  options := protoyaml.UnmarshalOptions{
+    Path: "testdata/basic.proto3test.yaml",
+    Validator: validator,
+  }
+  if err := options.Unmarshal(yamlBytes, &myMessage); err != nil {
+    log.Fatal(err)
+  }
+}
+```
+
+The errors produced by the `Validator` will show up along side the ProtoYAML errors, for example:
+
+```
+testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   4 |   - float_gt_lt: 10.5
+     |                  ^...................... cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+```
 
 ## Status: Beta
 
