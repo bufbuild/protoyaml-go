@@ -135,7 +135,7 @@ func main() {
 }
 ```
 
-Protovalidate violations will now show up along side the ProtoYAML errors, for example:
+The errors produced by the `Validator` will show up along side the ProtoYAML errors, for example:
 
 ```
 testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
