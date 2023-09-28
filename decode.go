@@ -123,7 +123,7 @@ type unmarshaler struct {
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
-	u.errors = append(u.errors, nodeError{
+	u.errors = append(u.errors, &nodeError{
 		Path:  u.options.Path,
 		Node:  node,
 		cause: err,

@@ -30,13 +30,13 @@ type nodeError struct {
 	cause error
 }
 
-func (n nodeError) Unwrap() error {
+func (n *nodeError) Unwrap() error {
 	return n.cause
 }
 
 // DetailedError returns an error message that includes the path and a code snippet, if
 // the lines of the source code are provided.
-func (n nodeError) Error() string {
+func (n *nodeError) Error() string {
 	var result strings.Builder
 	result.WriteString(fmt.Sprintf("%s:%d:%d %s\n", n.Path, n.Node.Line, n.Node.Column, n.Unwrap().Error()))
 	if n.line != "" {
@@ -62,7 +62,7 @@ type violationError struct {
 }
 
 // Error prints the field path, message, and constraint ID.
-func (v violationError) Error() string {
+func (v *violationError) Error() string {
 	return v.Violation.GetFieldPath() + ": " + v.Violation.GetMessage() + " (" + v.Violation.GetConstraintId() + ")"
 }
 
