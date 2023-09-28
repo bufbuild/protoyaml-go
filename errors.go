@@ -65,3 +65,18 @@ type violationError struct {
 func (v violationError) Error() string {
 	return v.Violation.GetFieldPath() + ": " + v.Violation.GetMessage() + " (" + v.Violation.GetConstraintId() + ")"
 }
+
+// TODO: Use errors.Join instead, once we drop support for Go <1.21.
+type unmarshalErrors []error
+
+func (ue unmarshalErrors) Error() string {
+	errorStrings := make([]string, len(ue))
+	for i, err := range ue {
+		errorStrings[i] = err.Error()
+	}
+	return strings.Join(errorStrings, "\n")
+}
+
+func (ue unmarshalErrors) Unwrap() []error {
+	return ue
+}

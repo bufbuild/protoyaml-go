@@ -108,7 +108,10 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		}
 	}
 
-	return errors.Join(unm.errors...)
+	if len(unm.errors) > 0 {
+		return unmarshalErrors(unm.errors)
+	}
+	return nil
 }
 
 type unmarshaler struct {
