@@ -166,12 +166,12 @@ func (u *unmarshaler) findAnyType(node *yaml.Node) protoreflect.MessageType {
 		return nil
 	}
 
-	// Get the message type
+	// Get the message type.
 	var msgType protoreflect.MessageType
 	var err error
 	if u.options.Resolver != nil {
 		msgType, err = u.options.Resolver.FindMessageByURL(typeURL)
-	} else { // Use the global registry
+	} else { // Use the global registry.
 		msgType, err = protoregistry.GlobalTypes.FindMessageByURL(typeURL)
 	}
 	if err != nil {
@@ -236,7 +236,7 @@ func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 		return nil
 	}
 
-	// base64 decode the value
+	// base64 decode the value.
 	data, err := base64.StdEncoding.DecodeString(node.Value)
 	if err != nil {
 		u.addErrorf(node, "invalid base64: %v", err)
@@ -270,12 +270,12 @@ func (u *unmarshaler) unmarshalBool(node *yaml.Node, forKey bool) bool {
 // Accepts either the enum name or number.
 func (u *unmarshaler) unmarshalEnum(node *yaml.Node, field protoreflect.FieldDescriptor) protoreflect.EnumNumber {
 	u.checkKind(node, yaml.ScalarNode)
-	// Get the enum descriptor
+	// Get the enum descriptor.
 	enumDesc := field.Enum()
 	if enumDesc.FullName() == "google.protobuf.NullValue" {
 		return 0
 	}
-	// Get the enum value
+	// Get the enum value.
 	enumVal := enumDesc.Values().ByName(protoreflect.Name(node.Value))
 	if enumVal == nil {
 		neg, parsed, err := parseSignedLit(node.Value)
@@ -410,7 +410,7 @@ func getExpectedNodeKind(field protoreflect.FieldDescriptor, forList bool) strin
 	}
 }
 
-// Parses Octal, Hex, Binary, Decimal, and Unsigned Integer Float literals
+// Parses Octal, Hex, Binary, Decimal, and Unsigned Integer Float literals.
 //
 // Conversion through JSON/YAML may have converted integers into floats, including
 // exponential notation. This function will parse those values back into integers
@@ -437,7 +437,7 @@ func parseUnsignedLit(value string) (uint64, error) {
 		if floatErr != nil || parsedFloat < 0 {
 			return 0, err
 		}
-		// See if its actually an integer
+		// See if it's actually an integer.
 		parsed = uint64(parsedFloat)
 		if float64(parsed) != parsedFloat || parsed >= (1<<53) {
 			return parsed, errors.New("precision loss")
