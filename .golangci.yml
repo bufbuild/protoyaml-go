@@ -11,6 +11,7 @@ linters-settings:
           - $gostd
           - github.com/bufbuild/protoyaml-go/decode
           - github.com/bufbuild/protovalidate-go
+          - buf.build/gen/go/bufbuild/protovalidate
   errcheck:
     check-type-assertions: true
   forbidigo:
@@ -24,8 +25,6 @@ linters-settings:
     # TODO, OPT, etc. comments are fine to commit. Use FIXME comments for
     # temporary hacks, and use godox to prevent committing them.
     keywords: [FIXME]
-  gocyclo:
-    min-complexity: 35
   nestif:
     min-complexity: 10
   varnamelen:
@@ -61,7 +60,6 @@ linters:
     - wsl               # generous whitespace violates house style
     - exhaustive
     - exhaustruct
-    - depguard
 issues:
   exclude:
     # Don't ban use of fmt.Errorf to create new errors, but the remaining
