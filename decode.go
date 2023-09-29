@@ -1156,35 +1156,35 @@ func findNodeByPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, pat
 	for i, key := range path {
 		switch cur.Kind {
 		case yaml.MappingNode:
-			found := false
 			if curMsg != nil {
 				field := findField(key, curMsg.Fields())
 				if field == nil {
 					return cur
 				}
+				var found bool
 				cur, found = findNodeByField(cur, field)
-				if found {
-					if field.IsMap() {
-						curMap = field
-						curMsg = nil
-					} else {
-						curMap = nil
-						curMsg = field.Message()
-					}
+				switch {
+				case !found:
+					return cur
+				case field.IsMap():
+					curMap = field
+					curMsg = nil
+				default:
+					curMap = nil
+					curMsg = field.Message()
 				}
 			} else if curMap != nil {
+				var found bool
 				var keyNode *yaml.Node
 				keyNode, cur, found = findEntryByKey(cur, key)
-				if found {
-					if i == len(path)-1 && toKey {
-						return keyNode
-					}
-					curMsg = curMap.MapValue().Message()
-					curMap = nil
+				if !found {
+					return cur
 				}
-			}
-			if !found {
-				return cur
+				if i == len(path)-1 && toKey {
+					return keyNode
+				}
+				curMsg = curMap.MapValue().Message()
+				curMap = nil
 			}
 		case yaml.SequenceNode:
 			idx, err := strconv.Atoi(key)
