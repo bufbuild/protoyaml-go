@@ -77,6 +77,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		options:   o,
 		custom:    make(map[protoreflect.FullName]customUnmarshaler),
 		validator: o.Validator,
+		lines:     strings.Split(string(data), "\n"),
 	}
 
 	addWktUnmarshalers(unm.custom)
@@ -108,27 +109,25 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 	}
 
 	if len(unm.errors) > 0 {
-		return &unmarshalError{
-			Errors: unm.errors,
-			data:   data,
-			path:   o.Path,
-		}
+		return unmarshalErrors(unm.errors)
 	}
-
 	return nil
 }
 
 type unmarshaler struct {
 	options   UnmarshalOptions
-	errors    []nodeError
+	errors    []error
 	custom    map[protoreflect.FullName]customUnmarshaler
 	validator Validator
+	lines     []string
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
-	u.errors = append(u.errors, nodeError{
+	u.errors = append(u.errors, &nodeError{
+		Path:  u.options.Path,
 		Node:  node,
-		Cause: err,
+		cause: err,
+		line:  u.lines[node.Line-1],
 	})
 }
 func (u *unmarshaler) addErrorf(node *yaml.Node, format string, args ...interface{}) {

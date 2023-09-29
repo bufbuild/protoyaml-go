@@ -22,37 +22,27 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// unmarshalError is returned when unmarshaling fails.
-type unmarshalError struct {
-	Errors []nodeError
-	path   string
-	data   []byte
-}
-
-func (u *unmarshalError) Error() string {
-	var result strings.Builder
-	lines := strings.Split(string(u.data), "\n")
-	for _, err := range u.Errors {
-		result.WriteString(err.DetailedError(u.path, lines))
-	}
-	return result.String()
-}
-
 // nodeError is an error that occurred while processing a specific yaml.Node.
 type nodeError struct {
 	Node  *yaml.Node
-	Cause error
+	Path  string
+	line  string
+	cause error
+}
+
+func (n *nodeError) Unwrap() error {
+	return n.cause
 }
 
 // DetailedError returns an error message that includes the path and a code snippet, if
 // the lines of the source code are provided.
-func (n *nodeError) DetailedError(path string, lines []string) string {
+func (n *nodeError) Error() string {
 	var result strings.Builder
-	result.WriteString(fmt.Sprintf("%s:%d:%d %s\n", path, n.Node.Line, n.Node.Column, n.Cause.Error()))
-	if n.Node.Line > 0 && n.Node.Line <= len(lines) {
+	result.WriteString(fmt.Sprintf("%s:%d:%d %s\n", n.Path, n.Node.Line, n.Node.Column, n.Unwrap().Error()))
+	if n.line != "" {
 		lineNum := fmt.Sprintf("%4d", n.Node.Line)
-		result.WriteString(fmt.Sprintf("%s | %s\n", lineNum, lines[n.Node.Line-1]))
-		tailLen := len(lines[n.Node.Line-1])
+		result.WriteString(fmt.Sprintf("%s | %s\n", lineNum, n.line))
+		tailLen := len(n.line)
 		if tailLen < 40 {
 			tailLen = 40
 		}
@@ -61,7 +51,7 @@ func (n *nodeError) DetailedError(path string, lines []string) string {
 			tailLen = 1
 		}
 		marker := strings.Repeat(" ", n.Node.Column-1) + "^" + strings.Repeat(".", tailLen)
-		result.WriteString(fmt.Sprintf("%s | %s %s\n", strings.Repeat(" ", len(lineNum)), marker, n.Cause.Error()))
+		result.WriteString(fmt.Sprintf("%s | %s %s\n", strings.Repeat(" ", len(lineNum)), marker, n.Unwrap().Error()))
 	}
 	return result.String()
 }
@@ -74,4 +64,19 @@ type violationError struct {
 // Error prints the field path, message, and constraint ID.
 func (v *violationError) Error() string {
 	return v.Violation.GetFieldPath() + ": " + v.Violation.GetMessage() + " (" + v.Violation.GetConstraintId() + ")"
+}
+
+// TODO: Use errors.Join instead, once we drop support for Go <1.21.
+type unmarshalErrors []error
+
+func (ue unmarshalErrors) Error() string {
+	errorStrings := make([]string, len(ue))
+	for i, err := range ue {
+		errorStrings[i] = err.Error()
+	}
+	return strings.Join(errorStrings, "\n")
+}
+
+func (ue unmarshalErrors) Unwrap() []error {
+	return ue
 }
