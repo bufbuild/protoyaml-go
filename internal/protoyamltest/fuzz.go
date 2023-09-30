@@ -191,10 +191,10 @@ func populateScalar(rnd *rand.Rand, field protoreflect.FieldDescriptor) protoref
 		if rnd.Intn(2) == 0 {
 			return protoreflect.ValueOfFloat32(rnd.Float32())
 		}
-		vals := interestingFloats(32, false)
+		vals := interestingFloats(32)
 		return protoreflect.ValueOfFloat32(float32(vals[rnd.Intn(len(vals))]))
 	case protoreflect.DoubleKind:
-		vals := interestingFloats(64, false)
+		vals := interestingFloats(64)
 		return protoreflect.ValueOfFloat64(vals[rnd.Intn(len(vals))])
 	case protoreflect.StringKind:
 		vals := interestingStrings()

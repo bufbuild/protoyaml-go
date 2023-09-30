@@ -188,7 +188,7 @@ func interestingU64FieldValues(field protoreflect.FieldDescriptor) []*proto3.Tes
 
 func interestingFloatFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
 	var interestingValues []*proto3.TestAllTypes
-	values := interestingFloats(32, false)
+	values := interestingFloats(32)
 	if field.IsList() {
 		listVal := &proto3.TestAllTypes{}
 		for _, value := range values {
@@ -207,7 +207,7 @@ func interestingFloatFieldValues(field protoreflect.FieldDescriptor) []*proto3.T
 
 func interestingDoubleFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
 	var interestingValues []*proto3.TestAllTypes
-	values := interestingFloats(64, false)
+	values := interestingFloats(64)
 	if field.IsList() {
 		listVal := &proto3.TestAllTypes{}
 		for _, value := range values {
@@ -326,18 +326,13 @@ func interestingUnsigned(bits int) []uint64 {
 	return result
 }
 
-func interestingFloats(bits uint8, keys bool) []float64 {
+func interestingFloats(bits uint8) []float64 {
 	result := []float64{}
 
-	if keys {
-		// Zero
-		result = append(result, 0.0)
-	} else {
-		// Zeros
-		result = append(result, 1/math.Inf(1), -1/math.Inf(1))
-		// NaNs
-		result = append(result, math.NaN())
-	}
+	// Zeros
+	result = append(result, 1/math.Inf(1), -1/math.Inf(1))
+	// NaN
+	result = append(result, math.NaN())
 
 	// Ones
 	result = append(result, 1.0, -1.0)
