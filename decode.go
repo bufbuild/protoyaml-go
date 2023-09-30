@@ -313,7 +313,7 @@ func (u *unmarshaler) unmarshalUnsigned(node *yaml.Node, bits int) uint64 {
 		return 0
 	}
 
-	parsed, err := parseUnsignedLit(node.Value)
+	parsed, err := parseUintLiteral(node.Value)
 	if err != nil {
 		u.addErrorf(node, "invalid integer: %v", err)
 	}
@@ -417,7 +417,7 @@ func getExpectedNodeKind(field protoreflect.FieldDescriptor, forList bool) strin
 // Conversion through JSON/YAML may have converted integers into floats, including
 // exponential notation. This function will parse those values back into integers
 // if possible.
-func parseUnsignedLit(value string) (uint64, error) {
+func parseUintLiteral(value string) (uint64, error) {
 	base := 10
 	if len(value) >= 2 && strings.HasPrefix(value, "0") {
 		switch value[1] {
@@ -497,7 +497,7 @@ func parseIntLiteral(value string) (intLit, error) {
 		value = value[1:]
 	}
 	var err error
-	lit.value, err = parseUnsignedLit(value)
+	lit.value, err = parseUintLiteral(value)
 	return lit, err
 }
 
