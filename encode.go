@@ -30,12 +30,12 @@ func Marshal(message proto.Message) ([]byte, error) {
 
 // MarshalOptions is a configurable YAML format marshaller.
 //
-// It uses the similar options to protojson.MarshalOptions.
+// It uses similar options to protojson.MarshalOptions.
 type MarshalOptions struct {
 	// AllowPartial allows messages that have missing required fields to marshal
 	// without returning an error.
 	AllowPartial bool
-	// UseProtoNames uses proto field name instead of lowerCamelCase name in JSON
+	// UseProtoNames uses proto field name instead of lowerCamelCase name in YAML
 	// field names.
 	UseProtoNames bool
 	// UseEnumNumbers emits enum values as numbers.

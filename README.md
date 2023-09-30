@@ -4,11 +4,9 @@
 [![Report Card](https://goreportcard.com/badge/github.com/bufbuild/protoyaml-go)](https://goreportcard.com/report/github.com/bufbuild/protoyaml-go)
 [![GoDoc](https://pkg.go.dev/badge/github.com/bufbuild/protoyaml-go.svg)](https://pkg.go.dev/github.com/bufbuild/protoyaml-go)
 
-Marshal and unmarshal Protocol Buffers as YAML.
+Marshal and unmarshal Protocol Buffers as YAML. Provides fine-grained error details with file, line, column and snippet information.
 
 Fully compatible with [protojson](https://github.com/protocolbuffers/protobuf-go/tree/master/encoding/protojson).
-
-Provides fine-grained error details, with file, line, column and snippet information.
 
 ## Usage
 
@@ -17,7 +15,6 @@ package main
 
 import (
   "log",
-
   "github.com/bufbuild/protoyaml-go",
 )
 
@@ -43,10 +40,9 @@ func main() {
 }
 ```
 
-Either `nil`, or an error with a detailed message will be returned. The error message includes the
-file name (if `Path` is set on `UnmarshalOptions`), line number, column number and snippet of the
-YAML that caused the error, for every error found in the file. For example, when unmarshalling the
-following YAML file:
+ProtoYAML returns either `nil` or an error with a detailed message. For every error found in the file, the error
+message includes the file name (if `Path` is set on `UnmarshalOptions`), line number, column number, and snippet
+of the YAML that caused the error. For example, when unmarshalling the following YAML file:
 
 ```yaml
 values:
@@ -99,14 +95,14 @@ testdata/basic.proto3test.yaml:14:18: expected bool, got "no"
      |                  ^...................... expected bool, got "no"
 ```
 
-In this case, we can see that, only `true` and `false` are valid values for the `single_bool` field.
+Only `true` and `false` are valid values for the `single_bool` field.
 
 For more examples, see the [internal/testdata](internal/testdata) directory.
 
 ## Validation
 
-ProtoYAML can integrate with external validation libraries, such as
-[Protovalidate](https://github.com/bufbuild/protovalidate-go), to provide additional rich error
+ProtoYAML can integrate with external validation libraries such as
+[Protovalidate](https://github.com/bufbuild/protovalidate-go) to provide additional rich error
 information. Simply provide a `Validator` to the `UnmarshalOptions`:
 
 ```go
@@ -136,7 +132,7 @@ func main() {
 }
 ```
 
-The errors produced by the `Validator` will show up along side the ProtoYAML errors, for example:
+The errors produced by the `Validator` will show up along side the ProtoYAML errors. For example:
 
 ```
 testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
@@ -146,7 +142,7 @@ testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater
 
 ## Status: Beta
 
-ProtoYAML is not yet stable, however the final shape is unlikely to change drastically - future edits will be somewhat minor.
+ProtoYAML is not yet stable. However, the final shape is unlikely to change drastically—future edits will be somewhat minor.
 
 ## Legal
 
