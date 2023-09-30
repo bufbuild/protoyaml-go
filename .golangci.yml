@@ -75,7 +75,6 @@ issues:
         - forbidigo
     - path: internal/protoyamltest/*
       linters:
-        - gocyclo
         - gosec
         - gosmopolitan
         - unparam
