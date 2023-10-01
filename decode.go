@@ -277,13 +277,16 @@ func (u *unmarshaler) unmarshalEnum(node *yaml.Node, field protoreflect.FieldDes
 	// Get the enum value.
 	enumVal := enumDesc.Values().ByName(protoreflect.Name(node.Value))
 	if enumVal == nil {
-		neg, parsed, err := parseSignedLit(node.Value)
-		if err != nil || parsed > 1<<32 {
+		lit, err := parseIntLiteral(node.Value)
+		if err != nil {
 			u.addErrorf(node, "unknown enum value %#v, expected one of %v", node.Value,
 				getEnumValueNames(enumDesc.Values()))
+		} else if err := lit.checkI32(field); err != nil {
+			u.addErrorf(node, "%w, expected one of %v", err,
+				getEnumValueNames(enumDesc.Values()))
 		}
-		num := protoreflect.EnumNumber(parsed)
-		if neg {
+		num := protoreflect.EnumNumber(lit.value)
+		if lit.negative {
 			num = -num
 		}
 		return num
@@ -310,7 +313,7 @@ func (u *unmarshaler) unmarshalUnsigned(node *yaml.Node, bits int) uint64 {
 		return 0
 	}
 
-	parsed, err := parseUnsignedLit(node.Value)
+	parsed, err := parseUintLiteral(node.Value)
 	if err != nil {
 		u.addErrorf(node, "invalid integer: %v", err)
 	}
@@ -326,19 +329,19 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 		return 0
 	}
 
-	neg, parsed, err := parseSignedLit(node.Value)
+	lit, err := parseIntLiteral(node.Value)
 	if err != nil {
 		u.addErrorf(node, "invalid integer: %v", err)
 	}
-	if neg {
-		if parsed <= 1<<(bits-1) {
-			return -int64(parsed)
+	if lit.negative {
+		if lit.value <= 1<<(bits-1) {
+			return -int64(lit.value)
 		}
 		u.addErrorf(node, "integer is too small: < %v", -(1 << (bits - 1)))
-	} else if parsed >= 1<<(bits-1) {
+	} else if lit.value >= 1<<(bits-1) {
 		u.addErrorf(node, "integer is too large: > %v", 1<<(bits-1)-1)
 	}
-	return int64(parsed)
+	return int64(lit.value)
 }
 
 func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
@@ -414,7 +417,7 @@ func getExpectedNodeKind(field protoreflect.FieldDescriptor, forList bool) strin
 // Conversion through JSON/YAML may have converted integers into floats, including
 // exponential notation. This function will parse those values back into integers
 // if possible.
-func parseUnsignedLit(value string) (uint64, error) {
+func parseUintLiteral(value string) (uint64, error) {
 	base := 10
 	if len(value) >= 2 && strings.HasPrefix(value, "0") {
 		switch value[1] {
@@ -445,14 +448,57 @@ func parseUnsignedLit(value string) (uint64, error) {
 	return parsed, nil
 }
 
-func parseSignedLit(value string) (bool, uint64, error) {
-	var negative bool
+type intLit struct {
+	negative bool
+	value    uint64
+}
+
+func (lit intLit) checkI32(field protoreflect.FieldDescriptor) error {
+	switch {
+	case lit.negative && lit.value > 1<<31: // Underflow.
+		return fmt.Errorf("expected int32 for %v, got int64", field.FullName())
+	case !lit.negative && lit.value >= 1<<31: // Overflow.
+		return fmt.Errorf("expected int32 for %v, got int64", field.FullName())
+	}
+	return nil
+}
+
+func (lit intLit) checkI64(field protoreflect.FieldDescriptor) error {
+	switch {
+	case lit.negative && lit.value > 1<<63: // Underflow.
+		return fmt.Errorf("expected int64 for %v, but: out of range", field.FullName())
+	case !lit.negative && lit.value >= 1<<63: // Overflow.
+		return fmt.Errorf("expected int64 for %v, got uint64", field.FullName())
+	}
+	return nil
+}
+
+func (lit intLit) checkU32(field protoreflect.FieldDescriptor) error {
+	switch {
+	case lit.negative: // Underflow.
+		return fmt.Errorf("expected uint32 for %v, got negative", field.FullName())
+	case lit.value >= 1<<32: // Overflow.
+		return fmt.Errorf("expected uint32 for %v, got uint64", field.FullName())
+	}
+	return nil
+}
+
+func (lit intLit) checkU64(field protoreflect.FieldDescriptor) error {
+	if lit.negative { // Underflow.
+		return fmt.Errorf("expected uint64 for %v, got negative", field.FullName())
+	}
+	return nil
+}
+
+func parseIntLiteral(value string) (intLit, error) {
+	var lit intLit
 	if strings.HasPrefix(value, "-") {
-		negative = true
+		lit.negative = true
 		value = value[1:]
 	}
-	parsed, err := parseUnsignedLit(value)
-	return negative, parsed, err
+	var err error
+	lit.value, err = parseUintLiteral(value)
+	return lit, err
 }
 
 // Searches for the field with the given 'key' first by Name, then by JSONName,
@@ -959,71 +1005,63 @@ func unmarshalScalarFloat(
 	floatVal float64,
 ) {
 	// Try to parse it as in integer, to see if the float representation is lossy.
-	neg, uintVal, uintErr := parseSignedLit(node.Value)
+	lit, uintErr := parseIntLiteral(node.Value)
 
 	// Check if we can represent this as a number.
-	floatUintVal := uint64(math.Abs(floatVal))     // The uint64 representation of the float.
-	if uintErr != nil || floatUintVal == uintVal { // Safe to represent as a number.
+	floatUintVal := uint64(math.Abs(floatVal))       // The uint64 representation of the float.
+	if uintErr != nil || floatUintVal == lit.value { // Safe to represent as a number.
 		value.Kind = &structpb.Value_NumberValue{NumberValue: floatVal}
 	} else { // Keep string representation.
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
 	}
 
+	if field == nil {
+		return
+	}
+
 	// Check for type/precision errors.
-	if field != nil {
-		switch field.Kind() {
-		case protoreflect.StringKind:
-		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-			switch {
-			case uintErr != nil:
-				unm.addErrorf(node, "expected int32 for %v, but: %v", field.FullName(), uintErr)
-			case neg && uintVal > 1<<31: // Underflow.
-				unm.addErrorf(node, "expected int32 for %v, got int64", field.FullName())
-			case !neg && uintVal >= 1<<31: // Overflow.
-				unm.addErrorf(node, "expected int32 for %v, got int64", field.FullName())
-			}
-		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-			switch {
-			case uintErr != nil:
-				unm.addErrorf(node, "expected int64 for %v, but: %v", field.FullName(), uintErr)
-			case neg && uintVal > 1<<63: // Underflow.
-				unm.addErrorf(node, "expected int64 for %v, but: out of range", field.FullName())
-			case !neg && uintVal >= 1<<63: // Overflow.
-				unm.addErrorf(node, "expected int64 for %v, got uint64", field.FullName())
-			}
-		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-			switch {
-			case uintErr != nil:
-				unm.addErrorf(node, "expected uint32 for %v, but: %v", field.FullName(), uintErr)
-			case neg: // Underflow.
-				unm.addErrorf(node, "expected uint32 for %v, got negative", field.FullName())
-			case uintVal >= 1<<32: // Overflow.
-				unm.addErrorf(node, "expected uint32 for %v, got uint64", field.FullName())
-			}
-		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-			switch {
-			case uintErr != nil:
-				unm.addErrorf(node, "expected uint64 for %v, but: %v", field.FullName(), uintErr)
-			case neg: // Underflow.
-				unm.addErrorf(node, "expected uint64 for %v, got negative", field.FullName())
-			}
-		case protoreflect.FloatKind:
-			if math.Abs(floatVal) > math.MaxFloat32 {
-				unm.addErrorf(node, "expected %s for %v, got float64", getExpectedNodeKind(field, true), field.FullName())
-			} else if uintErr == nil && uint64(float32(math.Abs(floatVal))) != uintVal {
-				// Loss of precision.
-				unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
-			}
-		case protoreflect.DoubleKind:
-			if uintErr == nil && floatUintVal != uintVal {
-				// Loss of precision.
-				unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
-			}
-		case protoreflect.BytesKind:
-			checkBytes(unm, node, field)
-		default:
-			unm.addErrorf(node, "expected %s for %v, got number", getExpectedNodeKind(field, true), field.FullName())
+	switch field.Kind() {
+	case protoreflect.StringKind:
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		if uintErr != nil {
+			unm.addErrorf(node, "expected int32 for %v, but: %w", field.FullName(), uintErr)
+		} else if err := lit.checkI32(field); err != nil {
+			unm.addError(node, err)
 		}
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		if uintErr != nil {
+			unm.addErrorf(node, "expected int64 for %v, but: %w", field.FullName(), uintErr)
+		} else if err := lit.checkI64(field); err != nil {
+			unm.addError(node, err)
+		}
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		if uintErr != nil {
+			unm.addErrorf(node, "expected uint32 for %v, but: %w", field.FullName(), uintErr)
+		} else if err := lit.checkU32(field); err != nil {
+			unm.addError(node, err)
+		}
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		if uintErr != nil {
+			unm.addErrorf(node, "expected uint64 for %v, but: %w", field.FullName(), uintErr)
+		} else if err := lit.checkU64(field); err != nil {
+			unm.addError(node, err)
+		}
+	case protoreflect.FloatKind:
+		if math.Abs(floatVal) > math.MaxFloat32 {
+			unm.addErrorf(node, "expected %s for %v, got float64", getExpectedNodeKind(field, true), field.FullName())
+		} else if uintErr == nil && uint64(float32(math.Abs(floatVal))) != lit.value {
+			// Loss of precision.
+			unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
+		}
+	case protoreflect.DoubleKind:
+		if uintErr == nil && floatUintVal != lit.value {
+			// Loss of precision.
+			unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
+		}
+	case protoreflect.BytesKind:
+		checkBytes(unm, node, field)
+	default:
+		unm.addErrorf(node, "expected %s for %v, got number", getExpectedNodeKind(field, true), field.FullName())
 	}
 }
 
@@ -1118,35 +1156,35 @@ func findNodeByPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, pat
 	for i, key := range path {
 		switch cur.Kind {
 		case yaml.MappingNode:
-			found := false
 			if curMsg != nil {
 				field := findField(key, curMsg.Fields())
 				if field == nil {
 					return cur
 				}
+				var found bool
 				cur, found = findNodeByField(cur, field)
-				if found {
-					if field.IsMap() {
-						curMap = field
-						curMsg = nil
-					} else {
-						curMap = nil
-						curMsg = field.Message()
-					}
+				switch {
+				case !found:
+					return cur
+				case field.IsMap():
+					curMap = field
+					curMsg = nil
+				default:
+					curMap = nil
+					curMsg = field.Message()
 				}
 			} else if curMap != nil {
+				var found bool
 				var keyNode *yaml.Node
 				keyNode, cur, found = findEntryByKey(cur, key)
-				if found {
-					if i == len(path)-1 && toKey {
-						return keyNode
-					}
-					curMsg = curMap.MapValue().Message()
-					curMap = nil
+				if !found {
+					return cur
 				}
-			}
-			if !found {
-				return cur
+				if i == len(path)-1 && toKey {
+					return keyNode
+				}
+				curMsg = curMap.MapValue().Message()
+				curMap = nil
 			}
 		case yaml.SequenceNode:
 			idx, err := strconv.Atoi(key)

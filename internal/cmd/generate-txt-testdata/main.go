@@ -51,17 +51,18 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			if strings.HasSuffix(path, ".yaml") {
-				actualText, err := tryParse(path)
-				if err != nil {
-					return err
-				}
-				// Replace the {type}.yaml extension with .expected.txt
-				expectedPath := strings.TrimSuffix(path, ".yaml") + ".txt"
-				// Write the actual text to the expected file
-				if err := os.WriteFile(expectedPath, []byte(actualText), 0600); err != nil {
-					return err
-				}
+			if !strings.HasSuffix(path, ".yaml") {
+				return fmt.Errorf("expected .yaml file, got %v", path)
+			}
+			actualText, err := tryParse(path)
+			if err != nil {
+				return err
+			}
+			// Replace the {type}.yaml extension with .expected.txt
+			expectedPath := strings.TrimSuffix(path, ".yaml") + ".txt"
+			// Write the actual text to the expected file
+			if err := os.WriteFile(expectedPath, []byte(actualText), 0600); err != nil {
+				return err
 			}
 			return nil
 		})

@@ -64,163 +64,228 @@ func InterestingTestValues() []*proto3.TestAllTypes {
 	}
 	fields := (&proto3.TestAllTypes{}).ProtoReflect().Descriptor().Fields()
 	for i := 0; i < fields.Len(); i++ {
-		field := fields.Get(i)
-		switch field.Kind() {
-		case protoreflect.MessageKind:
-			switch {
-			case field.IsList():
-				listVal := &proto3.TestAllTypes{}
-				for j := 0; j < 3; j++ {
-					newVal := listVal.ProtoReflect().Get(field).List().NewElement()
-					PopulateMessage(newVal.Message().Interface(), int64(j))
-					listVal.ProtoReflect().Mutable(field).List().Append(newVal)
-				}
-				interestingValues = append(interestingValues, listVal)
-			case field.IsMap():
-				// TODO: populate map
-			default:
-				newVal := &proto3.TestAllTypes{}
-				PopulateMessage(newVal.ProtoReflect().Mutable(field).Message().Interface(), 0)
-				interestingValues = append(interestingValues, newVal)
-			}
-		case protoreflect.EnumKind:
-			values := interestingEnumValues(field.Enum())
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfEnum(value))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfEnum(value))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-			values := interestingIntegers(32)
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfInt32(int32(value)))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfInt32(int32(value)))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-			values := interestingIntegers(64)
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfInt64(value))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfInt64(value))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-			values := interestingUnsigned(32)
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfUint32(uint32(value)))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfUint32(uint32(value)))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-			values := interestingUnsigned(64)
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfUint64(value))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfUint64(value))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.FloatKind:
-			values := interestingFloats(32, false)
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfFloat32(float32(value)))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfFloat32(float32(value)))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.DoubleKind:
-			values := interestingFloats(64, false)
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfFloat64(value))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfFloat64(value))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.StringKind:
-			values := interestingStrings()
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfString(value))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfString(value))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
-		case protoreflect.BytesKind:
-			values := interestingBytes()
-			if field.IsList() {
-				listVal := &proto3.TestAllTypes{}
-				for _, value := range values {
-					listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfBytes(value))
-				}
-				interestingValues = append(interestingValues, listVal)
-			} else {
-				for _, value := range values {
-					newVal := &proto3.TestAllTypes{}
-					newVal.ProtoReflect().Set(field, protoreflect.ValueOfBytes(value))
-					interestingValues = append(interestingValues, newVal)
-				}
-			}
+		interestingValues = append(interestingValues,
+			interestingFieldValues(fields.Get(i))...)
+	}
+	return interestingValues
+}
+
+func interestingMessageFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	switch {
+	case field.IsList():
+		listVal := &proto3.TestAllTypes{}
+		for j := 0; j < 3; j++ {
+			newVal := listVal.ProtoReflect().Get(field).List().NewElement()
+			PopulateMessage(newVal.Message().Interface(), int64(j))
+			listVal.ProtoReflect().Mutable(field).List().Append(newVal)
+		}
+		interestingValues = append(interestingValues, listVal)
+	case field.IsMap():
+		// TODO: populate map
+	default:
+		newVal := &proto3.TestAllTypes{}
+		PopulateMessage(newVal.ProtoReflect().Mutable(field).Message().Interface(), 0)
+		interestingValues = append(interestingValues, newVal)
+	}
+	return interestingValues
+}
+
+func interestingEnumFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingEnumValues(field.Enum())
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfEnum(value))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfEnum(value))
+			interestingValues = append(interestingValues, newVal)
 		}
 	}
 	return interestingValues
+}
+
+func interestingI32FieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingIntegers(32)
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfInt32(int32(value)))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfInt32(int32(value)))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingI64FieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingIntegers(64)
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfInt64(value))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfInt64(value))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingU32FieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingUnsigned(32)
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfUint32(uint32(value)))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfUint32(uint32(value)))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingU64FieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingUnsigned(64)
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfUint64(value))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfUint64(value))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingFloatFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingFloats(32)
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfFloat32(float32(value)))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfFloat32(float32(value)))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingDoubleFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingFloats(64)
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfFloat64(value))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfFloat64(value))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingStringFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingStrings()
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfString(value))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfString(value))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingBytesFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	var interestingValues []*proto3.TestAllTypes
+	values := interestingBytes()
+	if field.IsList() {
+		listVal := &proto3.TestAllTypes{}
+		for _, value := range values {
+			listVal.ProtoReflect().Mutable(field).List().Append(protoreflect.ValueOfBytes(value))
+		}
+		interestingValues = append(interestingValues, listVal)
+	} else {
+		for _, value := range values {
+			newVal := &proto3.TestAllTypes{}
+			newVal.ProtoReflect().Set(field, protoreflect.ValueOfBytes(value))
+			interestingValues = append(interestingValues, newVal)
+		}
+	}
+	return interestingValues
+}
+
+func interestingFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAllTypes {
+	switch field.Kind() {
+	case protoreflect.MessageKind:
+		return interestingMessageFieldValues(field)
+	case protoreflect.EnumKind:
+		return interestingEnumFieldValues(field)
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		return interestingI32FieldValues(field)
+	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
+		return interestingI64FieldValues(field)
+	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		return interestingU32FieldValues(field)
+	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
+		return interestingU64FieldValues(field)
+	case protoreflect.FloatKind:
+		return interestingFloatFieldValues(field)
+	case protoreflect.DoubleKind:
+		return interestingDoubleFieldValues(field)
+	case protoreflect.StringKind:
+		return interestingStringFieldValues(field)
+	case protoreflect.BytesKind:
+		return interestingBytesFieldValues(field)
+	}
+	return nil
 }
 
 func interestingEnumValues(enum protoreflect.EnumDescriptor) []protoreflect.EnumNumber {
@@ -261,18 +326,13 @@ func interestingUnsigned(bits int) []uint64 {
 	return result
 }
 
-func interestingFloats(bits uint8, keys bool) []float64 {
+func interestingFloats(bits uint8) []float64 {
 	result := []float64{}
 
-	if keys {
-		// Zero
-		result = append(result, 0.0)
-	} else {
-		// Zeros
-		result = append(result, 1/math.Inf(1), -1/math.Inf(1))
-		// NaNs
-		result = append(result, math.NaN())
-	}
+	// Zeros
+	result = append(result, 1/math.Inf(1), -1/math.Inf(1))
+	// NaN
+	result = append(result, math.NaN())
 
 	// Ones
 	result = append(result, 1.0, -1.0)
