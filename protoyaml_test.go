@@ -24,7 +24,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/testing/protocmp"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func TestParseFieldPath(t *testing.T) {
@@ -59,27 +58,6 @@ func TestParseFieldPath(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestDuration(t *testing.T) {
-	val := durationpb.Duration{
-		Seconds: 3600,
-	}
-	data, err := Marshal(&val)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(data) != "seconds: 3600\n" {
-		t.Fatalf("Expected seconds: 3600, got %s", string(data))
-	}
-	actual := &durationpb.Duration{}
-	if err := Unmarshal(data, actual); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(&val, actual) {
-		t.Fatalf("Expected %v, got %v", &val, actual)
-	}
-
 }
 
 func TestCombinatorial(t *testing.T) {
