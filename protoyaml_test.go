@@ -24,6 +24,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func TestParseFieldPath(t *testing.T) {
@@ -32,19 +33,19 @@ func TestParseFieldPath(t *testing.T) {
 		Path   string
 		Expect []string
 	}{
-		{"", nil},
-		{"foo", []string{"foo"}},
-		{"foo.bar", []string{"foo", "bar"}},
-		{"foo[0]", []string{"foo", "0"}},
-		{"foo[0].bar", []string{"foo", "0", "bar"}},
-		{"foo[0][1]", []string{"foo", "0", "1"}},
-		{"foo.0.1.bar", []string{"foo", "0", "1", "bar"}},
-		{"foo.bar[0]", []string{"foo", "bar", "0"}},
-		{"foo.bar[0].baz", []string{"foo", "bar", "0", "baz"}},
-		{`foo["bar"].baz`, []string{"foo", "bar", "baz"}},
-		{`foo["bar"].baz[0]`, []string{"foo", "bar", "baz", "0"}},
-		{`foo["b\"ar"].baz[0]`, []string{"foo", "b\"ar", "baz", "0"}},
-		{`foo["b.ar"].baz`, []string{"foo", "b.ar", "baz"}},
+		{Path: "", Expect: nil},
+		{Path: "foo", Expect: []string{"foo"}},
+		{Path: "foo.bar", Expect: []string{"foo", "bar"}},
+		{Path: "foo[0]", Expect: []string{"foo", "0"}},
+		{Path: "foo[0].bar", Expect: []string{"foo", "0", "bar"}},
+		{Path: "foo[0][1]", Expect: []string{"foo", "0", "1"}},
+		{Path: "foo.0.1.bar", Expect: []string{"foo", "0", "1", "bar"}},
+		{Path: "foo.bar[0]", Expect: []string{"foo", "bar", "0"}},
+		{Path: "foo.bar[0].baz", Expect: []string{"foo", "bar", "0", "baz"}},
+		{Path: `foo["bar"].baz`, Expect: []string{"foo", "bar", "baz"}},
+		{Path: `foo["bar"].baz[0]`, Expect: []string{"foo", "bar", "baz", "0"}},
+		{Path: `foo["b\"ar"].baz[0]`, Expect: []string{"foo", "b\"ar", "baz", "0"}},
+		{Path: `foo["b.ar"].baz`, Expect: []string{"foo", "b.ar", "baz"}},
 	} {
 		testCase := testCase
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
@@ -58,6 +59,27 @@ func TestParseFieldPath(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDuration(t *testing.T) {
+	val := durationpb.Duration{
+		Seconds: 3600,
+	}
+	data, err := Marshal(&val)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "seconds: 3600\n" {
+		t.Fatalf("Expected seconds: 3600, got %s", string(data))
+	}
+	actual := &durationpb.Duration{}
+	if err := Unmarshal(data, actual); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(&val, actual) {
+		t.Fatalf("Expected %v, got %v", &val, actual)
+	}
+
 }
 
 func TestCombinatorial(t *testing.T) {
