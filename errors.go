@@ -51,7 +51,7 @@ func (n *nodeError) Error() string {
 			tailLen = 1
 		}
 		marker := strings.Repeat(" ", n.Node.Column-1) + "^" + strings.Repeat(".", tailLen)
-		result.WriteString(fmt.Sprintf("%s | %s %s\n", strings.Repeat(" ", len(lineNum)), marker, n.Unwrap().Error()))
+		result.WriteString(fmt.Sprintf("%s | %s %s\n", lineNum, marker, n.Unwrap().Error()))
 	}
 	return result.String()
 }

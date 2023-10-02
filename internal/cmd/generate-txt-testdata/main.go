@@ -52,7 +52,7 @@ func run() error {
 				return err
 			}
 			if !strings.HasSuffix(path, ".yaml") {
-				return fmt.Errorf("expected .yaml file, got %v", path)
+				return nil
 			}
 			actualText, err := tryParse(path)
 			if err != nil {
