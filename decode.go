@@ -148,10 +148,7 @@ func (u *unmarshaler) checkTag(node *yaml.Node, expected string) {
 	}
 }
 
-func (u *unmarshaler) findAnyType(node *yaml.Node) protoreflect.MessageType {
-	if len(node.Content) == 0 {
-		return nil
-	}
+func (u *unmarshaler) findAnyTypeURL(node *yaml.Node) string {
 	typeURL := ""
 	for i := 1; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i-1]
@@ -161,10 +158,10 @@ func (u *unmarshaler) findAnyType(node *yaml.Node) protoreflect.MessageType {
 			break
 		}
 	}
-	if typeURL == "" {
-		return nil
-	}
+	return typeURL
+}
 
+func (u *unmarshaler) resolveAnyType(typeURL string) (protoreflect.MessageType, error) {
 	// Get the message type.
 	var msgType protoreflect.MessageType
 	var err error
@@ -174,10 +171,17 @@ func (u *unmarshaler) findAnyType(node *yaml.Node) protoreflect.MessageType {
 		msgType, err = protoregistry.GlobalTypes.FindMessageByURL(typeURL)
 	}
 	if err != nil {
-		u.addErrorf(node, "unknown type %q: %v", typeURL, err)
-		return nil
+		return nil, err
 	}
-	return msgType
+	return msgType, nil
+}
+
+func (u *unmarshaler) findAnyType(node *yaml.Node) (protoreflect.MessageType, error) {
+	typeURL := u.findAnyTypeURL(node)
+	if typeURL == "" {
+		return nil, errors.New("missing @type field")
+	}
+	return u.resolveAnyType(typeURL)
 }
 
 func (u *unmarshaler) findType(msgDesc protoreflect.MessageDescriptor) protoreflect.MessageType {
@@ -632,20 +636,30 @@ func addWktUnmarshalers(custom map[protoreflect.FullName]customUnmarshaler) {
 }
 
 func unmarshalAnyMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
-	anyVal, ok := message.(*anypb.Any)
-	if !ok || node.Kind != yaml.MappingNode || len(node.Content) == 0 {
+	if node.Kind != yaml.MappingNode || len(node.Content) == 0 {
 		return false
 	}
+	anyVal, ok := message.(*anypb.Any)
+	if !ok {
+		anyVal = &anypb.Any{}
+	}
 
-	// Get the message type
-	msgType := unm.findAnyType(node)
-	if msgType != nil {
-		protoVal := msgType.New()
-		unm.unmarshalMessage(node, protoVal.Interface())
-		err := anyVal.MarshalFrom(protoVal.Interface())
-		if err != nil {
-			unm.addErrorf(node, "failed to marshal %v: %v", msgType.Descriptor().FullName(), err)
-		}
+	// Get the message type.
+	msgType, err := unm.findAnyType(node)
+	if err != nil {
+		unm.addError(node, err)
+		return true
+	}
+
+	protoVal := msgType.New()
+	unm.unmarshalMessage(node, protoVal.Interface())
+	if err = anyVal.MarshalFrom(protoVal.Interface()); err != nil {
+		unm.addErrorf(node, "failed to marshal %v: %v", msgType.Descriptor().FullName(), err)
+	}
+
+	if !ok {
+		return setFieldByName(message, "type_url", protoreflect.ValueOfString(anyVal.TypeUrl)) &&
+			setFieldByName(message, "value", protoreflect.ValueOfBytes(anyVal.Value))
 	}
 
 	return true
@@ -744,12 +758,12 @@ func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Messa
 	err := parseDuration(node.Value, duration)
 	if err != nil {
 		unm.addErrorf(node, "invalid duration: %v", err)
-	} else if ok {
-		return true
+	} else if !ok {
+		// Set the fields dynamically.
+		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.Seconds)) &&
+			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.Nanos))
 	}
-	// Set the fields dynamically.
-	return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.Seconds)) &&
-		setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.Nanos))
+	return true
 }
 
 func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
@@ -763,22 +777,23 @@ func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Mess
 	err := parseTimestamp(node.Value, timestamp)
 	if err != nil {
 		unm.addErrorf(node, "invalid timestamp: %v", err)
-	} else if ok {
-		return true
+	} else if !ok {
+		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(timestamp.Seconds)) &&
+			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(timestamp.Nanos))
 	}
-	return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(timestamp.Seconds)) &&
-		setFieldByName(message, "nanos", protoreflect.ValueOfInt32(timestamp.Nanos))
+	return true
 }
 
 // Forwards unmarshaling to the "value" field of the given wrapper message.
 func unmarshalWrapperMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
-	if !isNull(node) {
-		valueField := message.ProtoReflect().Descriptor().Fields().ByName("value")
-		if node.Kind == yaml.MappingNode || valueField == nil {
-			return false
-		}
-		unm.unmarshalField(node, valueField, message)
+	if isNull(node) {
+		return true
 	}
+	valueField := message.ProtoReflect().Descriptor().Fields().ByName("value")
+	if node.Kind == yaml.MappingNode || valueField == nil {
+		return false
+	}
+	unm.unmarshalField(node, valueField, message)
 	return true
 }
 
@@ -961,7 +976,7 @@ func unmarshalStruct(
 		}
 	} else if msgDesc == nil {
 		// Try to find the message descriptor.
-		msgType := unm.findAnyType(node)
+		msgType, _ := unm.findAnyType(node)
 		if msgType != nil {
 			msgDesc = msgType.Descriptor()
 		}
