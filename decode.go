@@ -66,10 +66,10 @@ func (o UnmarshalOptions) Unmarshal(data []byte, message proto.Message) error {
 	if err := yaml.Unmarshal(data, &yamlFile); err != nil {
 		return err
 	}
-	return o.unmarshalNode(&yamlFile, message, data)
+	return o.unmarshalNode(&yamlFile, data, message)
 }
 
-func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, data []byte) error {
+func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, data []byte, message proto.Message) error {
 	if node.Kind == 0 {
 		return nil
 	}
@@ -123,7 +123,7 @@ type unmarshaler struct {
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
-	u.errors = append(u.errors, &nodeError{
+	u.errors = append(u.errors, &NodeError{
 		Path:  u.options.Path,
 		Node:  node,
 		cause: err,

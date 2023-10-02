@@ -22,21 +22,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// nodeError is an error that occurred while processing a specific yaml.Node.
-type nodeError struct {
+// NodeError is an error that occurred while processing a specific yaml.Node.
+type NodeError struct {
 	Node  *yaml.Node
 	Path  string
 	line  string
 	cause error
 }
 
-func (n *nodeError) Unwrap() error {
+func (n *NodeError) Unwrap() error {
 	return n.cause
 }
 
 // DetailedError returns an error message that includes the path and a code snippet, if
 // the lines of the source code are provided.
-func (n *nodeError) Error() string {
+func (n *NodeError) Error() string {
 	var result strings.Builder
 	result.WriteString(fmt.Sprintf("%s:%d:%d %s\n", n.Path, n.Node.Line, n.Node.Column, n.Unwrap().Error()))
 	if n.line != "" {
