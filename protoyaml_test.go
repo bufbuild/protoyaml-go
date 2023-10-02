@@ -23,7 +23,12 @@ import (
 	"github.com/bufbuild/protoyaml-go/internal/protoyamltest"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestParseFieldPath(t *testing.T) {
@@ -57,6 +62,120 @@ func TestParseFieldPath(t *testing.T) {
 				t.Fatalf("Expected %v, got %v", testCase.Expect, result)
 			}
 		})
+	}
+}
+
+// Ensure the value can round trip as a dynamic message.
+func testDynamicRoundTrip(t *testing.T, desc protoreflect.MessageDescriptor, data []byte) {
+	t.Helper()
+	dynval := dynamicpb.NewMessage(desc)
+	if err := Unmarshal(data, dynval); err != nil {
+		t.Fatal(err)
+	}
+	dyndata, err := Marshal(dynval)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != string(dyndata) {
+		t.Fatalf("Expected %s, got %s", string(data), string(dyndata))
+	}
+}
+
+func TestDuration_DynamicWithNanos(t *testing.T) {
+	t.Parallel()
+	val := &durationpb.Duration{
+		Seconds: 3600,
+		Nanos:   1010,
+	}
+	data, err := Marshal(val)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &durationpb.Duration{}
+	if err := Unmarshal(data, actual); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(val, actual) {
+		t.Fatalf("Expected %v, got %v", val, actual)
+	}
+	testDynamicRoundTrip(t, val.ProtoReflect().Descriptor(), data)
+}
+
+func TestTimestamp_DynamicWithNanos(t *testing.T) {
+	t.Parallel()
+	val := &timestamppb.Timestamp{
+		Seconds: 3600,
+		Nanos:   1001,
+	}
+	data, err := Marshal(val)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &timestamppb.Timestamp{}
+	if err := Unmarshal(data, actual); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(val, actual) {
+		t.Fatalf("Expected %v, got %v", val, actual)
+	}
+	testDynamicRoundTrip(t, val.ProtoReflect().Descriptor(), data)
+}
+
+func testValueDynamicRoundTrip(t *testing.T, data string) {
+	t.Helper()
+	val := &structpb.Value{}
+	testDynamicRoundTrip(t, val.ProtoReflect().Descriptor(), []byte(data))
+}
+
+func TestValue_Dynamic(t *testing.T) {
+	t.Parallel()
+	testValueDynamicRoundTrip(t, "null\n")
+	testValueDynamicRoundTrip(t, "true\n")
+	testValueDynamicRoundTrip(t, "false\n")
+	testValueDynamicRoundTrip(t, "1\n")
+	testValueDynamicRoundTrip(t, "foo\n")
+	testValueDynamicRoundTrip(t, "[]\n")
+	testValueDynamicRoundTrip(t, "{}\n")
+	testValueDynamicRoundTrip(t, "foo: bar\n")
+	testValueDynamicRoundTrip(t, "foo: 1\n")
+	testValueDynamicRoundTrip(t, "foo: true\n")
+	testValueDynamicRoundTrip(t, "foo: false\n")
+	testValueDynamicRoundTrip(t, "foo: null\n")
+	testValueDynamicRoundTrip(t, "foo: []\n")
+	testValueDynamicRoundTrip(t, "foo: {}\n")
+	testValueDynamicRoundTrip(t, "foo:\n    - 1\n")
+}
+
+func TestListValue_Dynamic(t *testing.T) {
+	t.Parallel()
+	val := &structpb.ListValue{
+		Values: []*structpb.Value{
+			{Kind: &structpb.Value_NullValue{}},
+			{Kind: &structpb.Value_NumberValue{NumberValue: 1}},
+			{Kind: &structpb.Value_StringValue{StringValue: "foo"}},
+		},
+	}
+	data, err := Marshal(val)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "- null\n- 1\n- foo\n" {
+		t.Fatalf("Expected - null\n- 1\n- foo, got %s", string(data))
+	}
+	actual := &structpb.ListValue{}
+	if err := Unmarshal(data, actual); err != nil {
+		t.Fatal(err)
+	}
+	dynval := dynamicpb.NewMessage(val.ProtoReflect().Descriptor())
+	if err := Unmarshal(data, dynval); err != nil {
+		t.Fatal(err)
+	}
+	dyndata, err := Marshal(dynval)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != string(dyndata) {
+		t.Fatalf("Expected %s, got %s", string(data), string(dyndata))
 	}
 }
 

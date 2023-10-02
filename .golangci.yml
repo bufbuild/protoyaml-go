@@ -27,6 +27,7 @@ linters-settings:
     keywords: [FIXME]
   varnamelen:
     ignore-decls:
+      - ok bool
       - T any
       - i int
       - wg sync.WaitGroup
