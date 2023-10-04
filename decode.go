@@ -1113,6 +1113,45 @@ func unmarshalScalarString(unm *unmarshaler, node *yaml.Node, value *structpb.Va
 	unmarshalScalarFloat(unm, node, value, field, floatVal)
 }
 
+func (u *unmarshaler) checkI32(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
+	if litErr != nil {
+		u.addErrorf(node, "expected int32 for %v, but: %w", field.FullName(), litErr)
+	} else if err := lit.checkI32(field); err != nil {
+		u.addError(node, err)
+	}
+}
+
+func (u *unmarshaler) checkI64(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
+	if litErr != nil {
+		u.addErrorf(node, "expected int64 for %v, but: %w", field.FullName(), litErr)
+	} else if err := lit.checkI64(field); err != nil {
+		u.addError(node, err)
+	}
+}
+func (u *unmarshaler) checkU32(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
+	if litErr != nil {
+		u.addErrorf(node, "expected uint32 for %v, but: %w", field.FullName(), litErr)
+	} else if err := lit.checkU32(field); err != nil {
+		u.addError(node, err)
+	}
+}
+func (u *unmarshaler) checkU64(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
+	if litErr != nil {
+		u.addErrorf(node, "expected uint64 for %v, but: %w", field.FullName(), litErr)
+	} else if err := lit.checkU64(field); err != nil {
+		u.addError(node, err)
+	}
+}
+
+func (u *unmarshaler) checkF32(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error, floatVal float64) {
+	if math.Abs(floatVal) > math.MaxFloat32 {
+		u.addErrorf(node, "expected %s for %v, got float64", getExpectedNodeKind(field, true), field.FullName())
+	} else if litErr == nil && uint64(float32(math.Abs(floatVal))) != lit.value {
+		// Loss of precision.
+		u.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
+	}
+}
+
 func unmarshalScalarFloat(
 	unm *unmarshaler,
 	node *yaml.Node,
@@ -1121,11 +1160,11 @@ func unmarshalScalarFloat(
 	floatVal float64,
 ) {
 	// Try to parse it as in integer, to see if the float representation is lossy.
-	lit, uintErr := parseIntLiteral(node.Value)
+	lit, litErr := parseIntLiteral(node.Value)
 
 	// Check if we can represent this as a number.
-	floatUintVal := uint64(math.Abs(floatVal))       // The uint64 representation of the float.
-	if uintErr != nil || floatUintVal == lit.value { // Safe to represent as a number.
+	floatUintVal := uint64(math.Abs(floatVal))      // The uint64 representation of the float.
+	if litErr != nil || floatUintVal == lit.value { // Safe to represent as a number.
 		value.Kind = &structpb.Value_NumberValue{NumberValue: floatVal}
 	} else { // Keep string representation.
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
@@ -1139,39 +1178,17 @@ func unmarshalScalarFloat(
 	switch field.Kind() {
 	case protoreflect.StringKind:
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		if uintErr != nil {
-			unm.addErrorf(node, "expected int32 for %v, but: %w", field.FullName(), uintErr)
-		} else if err := lit.checkI32(field); err != nil {
-			unm.addError(node, err)
-		}
+		unm.checkI32(node, field, lit, litErr)
 	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		if uintErr != nil {
-			unm.addErrorf(node, "expected int64 for %v, but: %w", field.FullName(), uintErr)
-		} else if err := lit.checkI64(field); err != nil {
-			unm.addError(node, err)
-		}
+		unm.checkI64(node, field, lit, litErr)
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		if uintErr != nil {
-			unm.addErrorf(node, "expected uint32 for %v, but: %w", field.FullName(), uintErr)
-		} else if err := lit.checkU32(field); err != nil {
-			unm.addError(node, err)
-		}
+		unm.checkU32(node, field, lit, litErr)
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		if uintErr != nil {
-			unm.addErrorf(node, "expected uint64 for %v, but: %w", field.FullName(), uintErr)
-		} else if err := lit.checkU64(field); err != nil {
-			unm.addError(node, err)
-		}
+		unm.checkU64(node, field, lit, litErr)
 	case protoreflect.FloatKind:
-		if math.Abs(floatVal) > math.MaxFloat32 {
-			unm.addErrorf(node, "expected %s for %v, got float64", getExpectedNodeKind(field, true), field.FullName())
-		} else if uintErr == nil && uint64(float32(math.Abs(floatVal))) != lit.value {
-			// Loss of precision.
-			unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
-		}
+		unm.checkF32(node, field, lit, litErr, floatVal)
 	case protoreflect.DoubleKind:
-		if uintErr == nil && floatUintVal != lit.value {
-			// Loss of precision.
+		if litErr == nil && floatUintVal != lit.value { // Loss of precision.
 			unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
 		}
 	case protoreflect.BytesKind:

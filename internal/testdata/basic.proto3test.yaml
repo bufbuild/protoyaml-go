@@ -2,6 +2,8 @@
 values:
   - single_bool: true
   - single_bool: false
+  - 13: true # single_bool has a field number of 13
+  - singleBool: false # The json_name of single_bool is singleBool
   - single_bool: 1
   - single_bool: 0
   - single_bool: "true"

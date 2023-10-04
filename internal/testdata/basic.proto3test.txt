@@ -1,235 +1,235 @@
-internal/testdata/basic.proto3test.yaml:5:18 expected bool, got "1"
-   5 |   - single_bool: 1
-   5 |                  ^...................... expected bool, got "1"
+internal/testdata/basic.proto3test.yaml:7:18 expected bool, got "1"
+   7 |   - single_bool: 1
+   7 |                  ^...................... expected bool, got "1"
 
-internal/testdata/basic.proto3test.yaml:6:18 expected bool, got "0"
-   6 |   - single_bool: 0
-   6 |                  ^...................... expected bool, got "0"
+internal/testdata/basic.proto3test.yaml:8:18 expected bool, got "0"
+   8 |   - single_bool: 0
+   8 |                  ^...................... expected bool, got "0"
 
-internal/testdata/basic.proto3test.yaml:7:18 expected tag !!bool, got !!str
-   7 |   - single_bool: "true"
-   7 |                  ^...................... expected tag !!bool, got !!str
+internal/testdata/basic.proto3test.yaml:9:18 expected tag !!bool, got !!str
+   9 |   - single_bool: "true"
+   9 |                  ^...................... expected tag !!bool, got !!str
 
-internal/testdata/basic.proto3test.yaml:8:18 expected tag !!bool, got !!str
-   8 |   - single_bool: "false"
-   8 |                  ^...................... expected tag !!bool, got !!str
+internal/testdata/basic.proto3test.yaml:10:18 expected tag !!bool, got !!str
+  10 |   - single_bool: "false"
+  10 |                  ^...................... expected tag !!bool, got !!str
 
-internal/testdata/basic.proto3test.yaml:9:18 expected bool, got "True"
-   9 |   - single_bool: True
-   9 |                  ^...................... expected bool, got "True"
+internal/testdata/basic.proto3test.yaml:11:18 expected bool, got "True"
+  11 |   - single_bool: True
+  11 |                  ^...................... expected bool, got "True"
 
-internal/testdata/basic.proto3test.yaml:10:18 expected bool, got "False"
-  10 |   - single_bool: False
-  10 |                  ^...................... expected bool, got "False"
+internal/testdata/basic.proto3test.yaml:12:18 expected bool, got "False"
+  12 |   - single_bool: False
+  12 |                  ^...................... expected bool, got "False"
 
-internal/testdata/basic.proto3test.yaml:11:18 expected bool, got "TRUE"
-  11 |   - single_bool: TRUE
-  11 |                  ^...................... expected bool, got "TRUE"
+internal/testdata/basic.proto3test.yaml:13:18 expected bool, got "TRUE"
+  13 |   - single_bool: TRUE
+  13 |                  ^...................... expected bool, got "TRUE"
 
-internal/testdata/basic.proto3test.yaml:12:18 expected bool, got "FALSE"
-  12 |   - single_bool: FALSE
-  12 |                  ^...................... expected bool, got "FALSE"
+internal/testdata/basic.proto3test.yaml:14:18 expected bool, got "FALSE"
+  14 |   - single_bool: FALSE
+  14 |                  ^...................... expected bool, got "FALSE"
 
-internal/testdata/basic.proto3test.yaml:13:18 expected bool, got "yes"
-  13 |   - single_bool: yes
-  13 |                  ^...................... expected bool, got "yes"
+internal/testdata/basic.proto3test.yaml:15:18 expected bool, got "yes"
+  15 |   - single_bool: yes
+  15 |                  ^...................... expected bool, got "yes"
 
-internal/testdata/basic.proto3test.yaml:14:18 expected bool, got "no"
-  14 |   - single_bool: no
-  14 |                  ^...................... expected bool, got "no"
+internal/testdata/basic.proto3test.yaml:16:18 expected bool, got "no"
+  16 |   - single_bool: no
+  16 |                  ^...................... expected bool, got "no"
 
-internal/testdata/basic.proto3test.yaml:15:18 expected scalar, got sequence
-  15 |   - single_bool: []
-  15 |                  ^...................... expected scalar, got sequence
+internal/testdata/basic.proto3test.yaml:17:18 expected scalar, got sequence
+  17 |   - single_bool: []
+  17 |                  ^...................... expected scalar, got sequence
 
-internal/testdata/basic.proto3test.yaml:16:18 expected scalar, got mapping
-  16 |   - single_bool: {}
-  16 |                  ^...................... expected scalar, got mapping
+internal/testdata/basic.proto3test.yaml:18:18 expected scalar, got mapping
+  18 |   - single_bool: {}
+  18 |                  ^...................... expected scalar, got mapping
 
-internal/testdata/basic.proto3test.yaml:23:19 integer is too large: > 2147483647
-  23 |   - single_int32: 2147483648
-  23 |                   ^..................... integer is too large: > 2147483647
+internal/testdata/basic.proto3test.yaml:25:19 integer is too large: > 2147483647
+  25 |   - single_int32: 2147483648
+  25 |                   ^..................... integer is too large: > 2147483647
 
-internal/testdata/basic.proto3test.yaml:24:19 integer is too small: < -2147483648
-  24 |   - single_int32: -2147483649
-  24 |                   ^..................... integer is too small: < -2147483648
+internal/testdata/basic.proto3test.yaml:26:19 integer is too small: < -2147483648
+  26 |   - single_int32: -2147483649
+  26 |                   ^..................... integer is too small: < -2147483648
 
-internal/testdata/basic.proto3test.yaml:27:19 integer is too large: > 2147483647
-  27 |   - single_int32: 0X80000000
-  27 |                   ^..................... integer is too large: > 2147483647
+internal/testdata/basic.proto3test.yaml:29:19 integer is too large: > 2147483647
+  29 |   - single_int32: 0X80000000
+  29 |                   ^..................... integer is too large: > 2147483647
 
-internal/testdata/basic.proto3test.yaml:28:19 integer is too small: < -2147483648
-  28 |   - single_int32: -0x80000001
-  28 |                   ^..................... integer is too small: < -2147483648
+internal/testdata/basic.proto3test.yaml:30:19 integer is too small: < -2147483648
+  30 |   - single_int32: -0x80000001
+  30 |                   ^..................... integer is too small: < -2147483648
 
-internal/testdata/basic.proto3test.yaml:31:19 integer is too large: > 2147483647
-  31 |   - single_int32: 0O20000000000
-  31 |                   ^..................... integer is too large: > 2147483647
+internal/testdata/basic.proto3test.yaml:33:19 integer is too large: > 2147483647
+  33 |   - single_int32: 0O20000000000
+  33 |                   ^..................... integer is too large: > 2147483647
 
-internal/testdata/basic.proto3test.yaml:32:19 integer is too small: < -2147483648
-  32 |   - single_int32: -0o20000000001
-  32 |                   ^..................... integer is too small: < -2147483648
+internal/testdata/basic.proto3test.yaml:34:19 integer is too small: < -2147483648
+  34 |   - single_int32: -0o20000000001
+  34 |                   ^..................... integer is too small: < -2147483648
 
-internal/testdata/basic.proto3test.yaml:35:19 integer is too large: > 2147483647
-  35 |   - single_int32: 0B10000000000000000000000000000000
-  35 |                   ^................................. integer is too large: > 2147483647
+internal/testdata/basic.proto3test.yaml:37:19 integer is too large: > 2147483647
+  37 |   - single_int32: 0B10000000000000000000000000000000
+  37 |                   ^................................. integer is too large: > 2147483647
 
-internal/testdata/basic.proto3test.yaml:36:19 integer is too small: < -2147483648
-  36 |   - single_int32: -0b10000000000000000000000000000001
-  36 |                   ^.................................. integer is too small: < -2147483648
+internal/testdata/basic.proto3test.yaml:38:19 integer is too small: < -2147483648
+  38 |   - single_int32: -0b10000000000000000000000000000001
+  38 |                   ^.................................. integer is too small: < -2147483648
 
-internal/testdata/basic.proto3test.yaml:37:19 invalid integer: precision loss
-  37 |   - single_int32: 1.5
-  37 |                   ^..................... invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:39:19 invalid integer: precision loss
+  39 |   - single_int32: 1.5
+  39 |                   ^..................... invalid integer: precision loss
 
-internal/testdata/basic.proto3test.yaml:40:19 invalid integer: precision loss
-  40 |   - single_int32: 5.0e-1
-  40 |                   ^..................... invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:42:19 invalid integer: precision loss
+  42 |   - single_int32: 5.0e-1
+  42 |                   ^..................... invalid integer: precision loss
 
-internal/testdata/basic.proto3test.yaml:46:19 integer is too large: > 9223372036854775807
-  46 |   - single_int64: 9223372036854775808
-  46 |                   ^..................... integer is too large: > 9223372036854775807
+internal/testdata/basic.proto3test.yaml:48:19 integer is too large: > 9223372036854775807
+  48 |   - single_int64: 9223372036854775808
+  48 |                   ^..................... integer is too large: > 9223372036854775807
 
-internal/testdata/basic.proto3test.yaml:47:19 integer is too small: < -9223372036854775808
-  47 |   - single_int64: -9223372036854775809
-  47 |                   ^..................... integer is too small: < -9223372036854775808
+internal/testdata/basic.proto3test.yaml:49:19 integer is too small: < -9223372036854775808
+  49 |   - single_int64: -9223372036854775809
+  49 |                   ^..................... integer is too small: < -9223372036854775808
 
-internal/testdata/basic.proto3test.yaml:49:19 invalid integer: precision loss
-  49 |   - single_int64: 9007199254740992.0
-  49 |                   ^..................... invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:51:19 invalid integer: precision loss
+  51 |   - single_int64: 9007199254740992.0
+  51 |                   ^..................... invalid integer: precision loss
 
-internal/testdata/basic.proto3test.yaml:50:19 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
-  50 |   - single_int32: --1
-  50 |                   ^..................... invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+internal/testdata/basic.proto3test.yaml:52:19 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+  52 |   - single_int32: --1
+  52 |                   ^..................... invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:51:19 invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
-  51 |   - single_int32: ---1
-  51 |                   ^..................... invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
+internal/testdata/basic.proto3test.yaml:53:19 invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
+  53 |   - single_int32: ---1
+  53 |                   ^..................... invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:52:19 invalid integer: precision loss
-  52 |   - single_int32: inf
-  52 |                   ^..................... invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:54:19 invalid integer: precision loss
+  54 |   - single_int32: inf
+  54 |                   ^..................... invalid integer: precision loss
 
-internal/testdata/basic.proto3test.yaml:52:19 integer is too large: > 2147483647
-  52 |   - single_int32: inf
-  52 |                   ^..................... integer is too large: > 2147483647
+internal/testdata/basic.proto3test.yaml:54:19 integer is too large: > 2147483647
+  54 |   - single_int32: inf
+  54 |                   ^..................... integer is too large: > 2147483647
 
-internal/testdata/basic.proto3test.yaml:53:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
-  53 |   - single_int32: .inf
-  53 |                   ^..................... invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
+internal/testdata/basic.proto3test.yaml:55:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
+  55 |   - single_int32: .inf
+  55 |                   ^..................... invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:54:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
-  54 |   - single_int32: -.inf
-  54 |                   ^..................... invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
+internal/testdata/basic.proto3test.yaml:56:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
+  56 |   - single_int32: -.inf
+  56 |                   ^..................... invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:55:19 invalid integer: strconv.ParseUint: parsing ".nan": invalid syntax
-  55 |   - single_int32: .nan
-  55 |                   ^..................... invalid integer: strconv.ParseUint: parsing ".nan": invalid syntax
+internal/testdata/basic.proto3test.yaml:57:19 invalid integer: strconv.ParseUint: parsing ".nan": invalid syntax
+  57 |   - single_int32: .nan
+  57 |                   ^..................... invalid integer: strconv.ParseUint: parsing ".nan": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:56:20 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
-  56 |   - single_uint32: -1
-  56 |                    ^.................... invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+internal/testdata/basic.proto3test.yaml:58:20 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+  58 |   - single_uint32: -1
+  58 |                    ^.................... invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:61:20 integer is too large: > 4294967295
-  61 |   - single_uint32: 4294967296
-  61 |                    ^.................... integer is too large: > 4294967295
+internal/testdata/basic.proto3test.yaml:63:20 integer is too large: > 4294967295
+  63 |   - single_uint32: 4294967296
+  63 |                    ^.................... integer is too large: > 4294967295
 
-internal/testdata/basic.proto3test.yaml:63:20 invalid integer: precision loss
-  63 |   - single_uint64: 18446744073709551616
-  63 |                    ^.................... invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:65:20 invalid integer: precision loss
+  65 |   - single_uint64: 18446744073709551616
+  65 |                    ^.................... invalid integer: precision loss
 
-internal/testdata/basic.proto3test.yaml:69:19 invalid float: strconv.ParseFloat: parsing "1.7014118346046923e+39": value out of range
-  69 |   - single_float: 1.7014118346046923e+39
-  69 |                   ^..................... invalid float: strconv.ParseFloat: parsing "1.7014118346046923e+39": value out of range
+internal/testdata/basic.proto3test.yaml:71:19 invalid float: strconv.ParseFloat: parsing "1.7014118346046923e+39": value out of range
+  71 |   - single_float: 1.7014118346046923e+39
+  71 |                   ^..................... invalid float: strconv.ParseFloat: parsing "1.7014118346046923e+39": value out of range
 
-internal/testdata/basic.proto3test.yaml:81:20 expected scalar, got sequence
-  81 |   - single_string: []
-  81 |                    ^.................... expected scalar, got sequence
+internal/testdata/basic.proto3test.yaml:83:20 expected scalar, got sequence
+  83 |   - single_string: []
+  83 |                    ^.................... expected scalar, got sequence
 
-internal/testdata/basic.proto3test.yaml:82:20 expected scalar, got mapping
-  82 |   - single_string: {}
-  82 |                    ^.................... expected scalar, got mapping
+internal/testdata/basic.proto3test.yaml:84:20 expected scalar, got mapping
+  84 |   - single_string: {}
+  84 |                    ^.................... expected scalar, got mapping
 
-internal/testdata/basic.proto3test.yaml:85:19 invalid base64: illegal base64 data at input byte 3
-  85 |   - single_bytes: bad base64
-  85 |                   ^..................... invalid base64: illegal base64 data at input byte 3
+internal/testdata/basic.proto3test.yaml:87:19 invalid base64: illegal base64 data at input byte 3
+  87 |   - single_bytes: bad base64
+  87 |                   ^..................... invalid base64: illegal base64 data at input byte 3
 
-internal/testdata/basic.proto3test.yaml:93:22 unknown enum value "UNKNOWN", expected one of [FOO BAR BAZ]
-  93 |   - standalone_enum: UNKNOWN
-  93 |                      ^.................. unknown enum value "UNKNOWN", expected one of [FOO BAR BAZ]
+internal/testdata/basic.proto3test.yaml:95:22 unknown enum value "UNKNOWN", expected one of [FOO BAR BAZ]
+  95 |   - standalone_enum: UNKNOWN
+  95 |                      ^.................. unknown enum value "UNKNOWN", expected one of [FOO BAR BAZ]
 
-internal/testdata/basic.proto3test.yaml:95:22 unknown enum value "foo", expected one of [FOO BAR BAZ]
-  95 |   - standalone_enum: foo
-  95 |                      ^.................. unknown enum value "foo", expected one of [FOO BAR BAZ]
+internal/testdata/basic.proto3test.yaml:97:22 unknown enum value "foo", expected one of [FOO BAR BAZ]
+  97 |   - standalone_enum: foo
+  97 |                      ^.................. unknown enum value "foo", expected one of [FOO BAR BAZ]
 
-internal/testdata/basic.proto3test.yaml:96:21 expected sequence, got scalar
-  96 |   - repeated_int32: 1
-  96 |                     ^................... expected sequence, got scalar
+internal/testdata/basic.proto3test.yaml:98:21 expected sequence, got scalar
+  98 |   - repeated_int32: 1
+  98 |                     ^................... expected sequence, got scalar
 
-internal/testdata/basic.proto3test.yaml:98:30 invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
-  98 |   - repeated_int32: [1, "1", hi]
-  98 |                              ^.......... invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
+internal/testdata/basic.proto3test.yaml:100:30 invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
+ 100 |   - repeated_int32: [1, "1", hi]
+ 100 |                              ^.......... invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:99:21 expected sequence, got mapping
-  99 |   - repeated_int32: {}
-  99 |                     ^................... expected sequence, got mapping
+internal/testdata/basic.proto3test.yaml:101:21 expected sequence, got mapping
+ 101 |   - repeated_int32: {}
+ 101 |                     ^................... expected sequence, got mapping
 
-internal/testdata/basic.proto3test.yaml:100:22 expected scalar, got sequence
- 100 |   - repeated_int32: [[]]
- 100 |                      ^.................. expected scalar, got sequence
+internal/testdata/basic.proto3test.yaml:102:22 expected scalar, got sequence
+ 102 |   - repeated_int32: [[]]
+ 102 |                      ^.................. expected scalar, got sequence
 
-internal/testdata/basic.proto3test.yaml:101:22 expected scalar, got sequence
- 101 |   - repeated_int32: [[1]]
- 101 |                      ^.................. expected scalar, got sequence
+internal/testdata/basic.proto3test.yaml:103:22 expected scalar, got sequence
+ 103 |   - repeated_int32: [[1]]
+ 103 |                      ^.................. expected scalar, got sequence
 
-internal/testdata/basic.proto3test.yaml:102:25 expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got scalar
- 102 |   - standalone_message: 1
- 102 |                         ^............... expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got scalar
+internal/testdata/basic.proto3test.yaml:104:25 expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got scalar
+ 104 |   - standalone_message: 1
+ 104 |                         ^............... expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got scalar
 
-internal/testdata/basic.proto3test.yaml:103:25 expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got sequence
- 103 |   - standalone_message: []
- 103 |                         ^............... expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got sequence
+internal/testdata/basic.proto3test.yaml:105:25 expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got sequence
+ 105 |   - standalone_message: []
+ 105 |                         ^............... expected fields for bufext.cel.expr.conformance.proto3.TestAllTypes.NestedMessage, got sequence
 
-internal/testdata/basic.proto3test.yaml:105:22 invalid duration: missing trailing 's'
- 105 |   - single_duration: 1
- 105 |                      ^.................. invalid duration: missing trailing 's'
+internal/testdata/basic.proto3test.yaml:107:22 invalid duration: missing trailing 's'
+ 107 |   - single_duration: 1
+ 107 |                      ^.................. invalid duration: missing trailing 's'
 
-internal/testdata/basic.proto3test.yaml:108:22 invalid duration: too many fractional second digits
- 108 |   - single_duration: 1.0123456789s
- 108 |                      ^.................. invalid duration: too many fractional second digits
+internal/testdata/basic.proto3test.yaml:110:22 invalid duration: too many fractional second digits
+ 110 |   - single_duration: 1.0123456789s
+ 110 |                      ^.................. invalid duration: too many fractional second digits
 
-internal/testdata/basic.proto3test.yaml:109:22 invalid duration: strconv.ParseInt: parsing "A": invalid syntax
- 109 |   - single_duration: As
- 109 |                      ^.................. invalid duration: strconv.ParseInt: parsing "A": invalid syntax
+internal/testdata/basic.proto3test.yaml:111:22 invalid duration: strconv.ParseInt: parsing "A": invalid syntax
+ 111 |   - single_duration: As
+ 111 |                      ^.................. invalid duration: strconv.ParseInt: parsing "A": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:110:22 invalid duration: strconv.ParseInt: parsing "A": invalid syntax
- 110 |   - single_duration: A.1s
- 110 |                      ^.................. invalid duration: strconv.ParseInt: parsing "A": invalid syntax
+internal/testdata/basic.proto3test.yaml:112:22 invalid duration: strconv.ParseInt: parsing "A": invalid syntax
+ 112 |   - single_duration: A.1s
+ 112 |                      ^.................. invalid duration: strconv.ParseInt: parsing "A": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:111:22 invalid duration: invalid duration: too many '.' characters
- 111 |   - single_duration: 1.1.1s
- 111 |                      ^.................. invalid duration: invalid duration: too many '.' characters
+internal/testdata/basic.proto3test.yaml:113:22 invalid duration: invalid duration: too many '.' characters
+ 113 |   - single_duration: 1.1.1s
+ 113 |                      ^.................. invalid duration: invalid duration: too many '.' characters
 
-internal/testdata/basic.proto3test.yaml:112:22 invalid duration: strconv.ParseInt: parsing "B": invalid syntax
- 112 |   - single_duration: 1.Bs
- 112 |                      ^.................. invalid duration: strconv.ParseInt: parsing "B": invalid syntax
+internal/testdata/basic.proto3test.yaml:114:22 invalid duration: strconv.ParseInt: parsing "B": invalid syntax
+ 114 |   - single_duration: 1.Bs
+ 114 |                      ^.................. invalid duration: strconv.ParseInt: parsing "B": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:117:23 invalid timestamp: before 0001-01-01T00:00:00Z
- 117 |   - single_timestamp: 0000-01-01T00:00:00Z
- 117 |                       ^................... invalid timestamp: before 0001-01-01T00:00:00Z
+internal/testdata/basic.proto3test.yaml:119:23 invalid timestamp: before 0001-01-01T00:00:00Z
+ 119 |   - single_timestamp: 0000-01-01T00:00:00Z
+ 119 |                       ^................... invalid timestamp: before 0001-01-01T00:00:00Z
 
-internal/testdata/basic.proto3test.yaml:119:23 invalid timestamp: parsing time "9999-12-31T23:59:60Z": second out of range
- 119 |   - single_timestamp: 9999-12-31T23:59:60Z
- 119 |                       ^................... invalid timestamp: parsing time "9999-12-31T23:59:60Z": second out of range
+internal/testdata/basic.proto3test.yaml:121:23 invalid timestamp: parsing time "9999-12-31T23:59:60Z": second out of range
+ 121 |   - single_timestamp: 9999-12-31T23:59:60Z
+ 121 |                       ^................... invalid timestamp: parsing time "9999-12-31T23:59:60Z": second out of range
 
-internal/testdata/basic.proto3test.yaml:123:23 invalid timestamp: parsing time "10" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "10" as "2006"
- 123 |   - single_timestamp: 10
- 123 |                       ^................. invalid timestamp: parsing time "10" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "10" as "2006"
+internal/testdata/basic.proto3test.yaml:125:23 invalid timestamp: parsing time "10" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "10" as "2006"
+ 125 |   - single_timestamp: 10
+ 125 |                       ^................. invalid timestamp: parsing time "10" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "10" as "2006"
 
-internal/testdata/basic.proto3test.yaml:124:23 invalid timestamp: parsing time "hello" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "hello" as "2006"
- 124 |   - single_timestamp: hello
- 124 |                       ^................. invalid timestamp: parsing time "hello" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "hello" as "2006"
+internal/testdata/basic.proto3test.yaml:126:23 invalid timestamp: parsing time "hello" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "hello" as "2006"
+ 126 |   - single_timestamp: hello
+ 126 |                       ^................. invalid timestamp: parsing time "hello" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "hello" as "2006"
 
-internal/testdata/basic.proto3test.yaml:128:23 expected fields for google.protobuf.Timestamp, got sequence
- 128 |   - single_timestamp: []
- 128 |                       ^................. expected fields for google.protobuf.Timestamp, got sequence
+internal/testdata/basic.proto3test.yaml:130:23 expected fields for google.protobuf.Timestamp, got sequence
+ 130 |   - single_timestamp: []
+ 130 |                       ^................. expected fields for google.protobuf.Timestamp, got sequence

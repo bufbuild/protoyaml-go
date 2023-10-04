@@ -1,6 +1,8 @@
 run:
   skip-dirs-use-default: false
 linters-settings:
+  gocyclo:
+    min-complexity: 15
   depguard:
     rules:
       Main:

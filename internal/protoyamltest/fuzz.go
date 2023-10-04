@@ -157,6 +157,38 @@ func populateMapValue(rnd *rand.Rand, field protoreflect.FieldDescriptor, mapKey
 	}
 }
 
+func populateI32(rnd *rand.Rand) protoreflect.Value {
+	if rnd.Intn(2) == 0 {
+		return protoreflect.ValueOfInt32(int32(rnd.Int()))
+	}
+	vals := interestingIntegers(32)
+	return protoreflect.ValueOfInt32(int32(vals[rnd.Intn(len(vals))]))
+}
+
+func populateI64(rnd *rand.Rand) protoreflect.Value {
+	if rnd.Intn(2) == 0 {
+		return protoreflect.ValueOfInt64(int64(rnd.Int()))
+	}
+	vals := interestingIntegers(64)
+	return protoreflect.ValueOfInt64(vals[rnd.Intn(len(vals))])
+}
+
+func populateU32(rnd *rand.Rand) protoreflect.Value {
+	if rnd.Intn(2) == 0 {
+		return protoreflect.ValueOfUint32(rnd.Uint32())
+	}
+	vals := interestingUnsigned(32)
+	return protoreflect.ValueOfUint32(uint32(vals[rnd.Intn(len(vals))]))
+}
+
+func populateU64(rnd *rand.Rand) protoreflect.Value {
+	if rnd.Intn(2) == 0 {
+		return protoreflect.ValueOfUint64(rnd.Uint64())
+	}
+	vals := interestingUnsigned(64)
+	return protoreflect.ValueOfUint64(vals[rnd.Intn(len(vals))])
+}
+
 func populateScalar(rnd *rand.Rand, field protoreflect.FieldDescriptor) protoreflect.Value {
 	switch field.Kind() {
 	case protoreflect.BoolKind:
@@ -164,29 +196,13 @@ func populateScalar(rnd *rand.Rand, field protoreflect.FieldDescriptor) protoref
 	case protoreflect.EnumKind:
 		return populateEnum(rnd, field)
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		if rnd.Intn(2) == 0 {
-			return protoreflect.ValueOfInt32(int32(rnd.Int()))
-		}
-		vals := interestingIntegers(32)
-		return protoreflect.ValueOfInt32(int32(vals[rnd.Intn(len(vals))]))
+		return populateI32(rnd)
 	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		if rnd.Intn(2) == 0 {
-			return protoreflect.ValueOfInt64(int64(rnd.Int()))
-		}
-		vals := interestingIntegers(64)
-		return protoreflect.ValueOfInt64(vals[rnd.Intn(len(vals))])
+		return populateI64(rnd)
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		if rnd.Intn(2) == 0 {
-			return protoreflect.ValueOfUint32(rnd.Uint32())
-		}
-		vals := interestingUnsigned(32)
-		return protoreflect.ValueOfUint32(uint32(vals[rnd.Intn(len(vals))]))
+		return populateU32(rnd)
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		if rnd.Intn(2) == 0 {
-			return protoreflect.ValueOfUint64(rnd.Uint64())
-		}
-		vals := interestingUnsigned(64)
-		return protoreflect.ValueOfUint64(vals[rnd.Intn(len(vals))])
+		return populateU64(rnd)
 	case protoreflect.FloatKind:
 		if rnd.Intn(2) == 0 {
 			return protoreflect.ValueOfFloat32(rnd.Float32())
