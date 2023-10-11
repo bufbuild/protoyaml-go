@@ -14,8 +14,9 @@ Fully compatible with [protojson](https://github.com/protocolbuffers/protobuf-go
 package main
 
 import (
-  "log",
-  "github.com/bufbuild/protoyaml-go",
+  "log"
+
+  "github.com/bufbuild/protoyaml-go"
 )
 
 func main() {
@@ -109,10 +110,10 @@ information. Simply provide a `Validator` to the `UnmarshalOptions`:
 package main
 
 import (
-  "log",
+  "log"
 
-  "github.com/bufbuild/protoyaml-go",
-  "github.com/bufbuild/protovalidate-go",
+  "github.com/bufbuild/protoyaml-go"
+  "github.com/bufbuild/protovalidate-go"
 )
 
 func main() {
