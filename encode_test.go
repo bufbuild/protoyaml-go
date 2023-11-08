@@ -136,3 +136,18 @@ func TestEnumEncoding(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", ival.GetRepeatedNestedEnum()[4], oval.GetRepeatedNestedEnum()[4])
 	}
 }
+
+func TestIndentSize(t *testing.T) {
+	t.Parallel()
+	ival := &proto3.TestAllTypes{
+		RepeatedNestedEnum: []proto3.TestAllTypes_NestedEnum{proto3.TestAllTypes_BAR, -1, 0, 1, 100},
+	}
+	// Encode the message as YAML
+	data, err := MarshalOptions{Indent: 2}.Marshal(ival)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "repeatedNestedEnum:\n  - BAR\n  - -1\n  - FOO\n  - BAR\n  - 100\n" {
+		t.Fatalf("Expected 2 space indent, got %q", string(data))
+	}
+}

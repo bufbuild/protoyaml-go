@@ -15,6 +15,7 @@
 package protoyaml
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -32,6 +33,9 @@ func Marshal(message proto.Message) ([]byte, error) {
 //
 // It uses similar options to protojson.MarshalOptions.
 type MarshalOptions struct {
+	// The number of spaces to indent. Passed to yaml.Encoder.SetIndent.
+	// If 0, uses the default indent of yaml.v3 (4)
+	Indent int
 	// AllowPartial allows messages that have missing required fields to marshal
 	// without returning an error.
 	AllowPartial bool
@@ -68,5 +72,11 @@ func (o MarshalOptions) Marshal(message proto.Message) ([]byte, error) {
 		return nil, err
 	}
 	// Write the JSON back out as YAML
-	return yaml.Marshal(jsonVal)
+	buffer := &bytes.Buffer{}
+	encoder := yaml.NewEncoder(buffer)
+	encoder.SetIndent(o.Indent)
+	if err := encoder.Encode(jsonVal); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
