@@ -658,8 +658,8 @@ func unmarshalAnyMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) b
 	}
 
 	if !ok {
-		return setFieldByName(message, "type_url", protoreflect.ValueOfString(anyVal.TypeUrl)) &&
-			setFieldByName(message, "value", protoreflect.ValueOfBytes(anyVal.Value))
+		return setFieldByName(message, "type_url", protoreflect.ValueOfString(anyVal.GetTypeUrl())) &&
+			setFieldByName(message, "value", protoreflect.ValueOfBytes(anyVal.GetValue()))
 	}
 
 	return true
@@ -760,8 +760,8 @@ func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Messa
 		unm.addErrorf(node, "invalid duration: %v", err)
 	} else if !ok {
 		// Set the fields dynamically.
-		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.Seconds)) &&
-			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.Nanos))
+		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.GetSeconds())) &&
+			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.GetNanos()))
 	}
 	return true
 }
@@ -778,8 +778,8 @@ func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Mess
 	if err != nil {
 		unm.addErrorf(node, "invalid timestamp: %v", err)
 	} else if !ok {
-		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(timestamp.Seconds)) &&
-			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(timestamp.Nanos))
+		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(timestamp.GetSeconds())) &&
+			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(timestamp.GetNanos()))
 	}
 	return true
 }
@@ -798,7 +798,7 @@ func unmarshalWrapperMsg(unm *unmarshaler, node *yaml.Node, message proto.Messag
 }
 
 func dynSetValue(message proto.Message, value *structpb.Value) bool {
-	switch val := value.Kind.(type) {
+	switch val := value.GetKind().(type) {
 	case *structpb.Value_NullValue:
 		return setFieldByName(message, "null_value", protoreflect.ValueOfEnum(protoreflect.EnumNumber(val.NullValue)))
 	case *structpb.Value_NumberValue:
@@ -831,7 +831,7 @@ func dynSetListValue(message proto.Message, list *structpb.ListValue) bool {
 		return false
 	}
 	values := message.ProtoReflect().Mutable(valuesFld).List()
-	for _, item := range list.Values {
+	for _, item := range list.GetValues() {
 		value := values.NewElement()
 		if !dynSetValue(value.Message().Interface(), item) {
 			return false
@@ -847,7 +847,7 @@ func dynSetStruct(message proto.Message, structVal *structpb.Struct) bool {
 		return false
 	}
 	fields := message.ProtoReflect().Mutable(fieldsFld).Map()
-	for key, item := range structVal.Fields {
+	for key, item := range structVal.GetFields() {
 		value := fields.NewValue()
 		if !dynSetValue(value.Message().Interface(), item) {
 			return false
@@ -953,7 +953,7 @@ func unmarshalListValue(
 	for _, itemNode := range node.Content {
 		itemValue := &structpb.Value{}
 		unmarshalValue(unm, itemNode, itemValue, field, true)
-		list.Values = append(list.Values, itemValue)
+		list.Values = append(list.GetValues(), itemValue)
 	}
 }
 
@@ -1005,7 +1005,7 @@ func unmarshalStruct(
 		valueNode := node.Content[i]
 		value := &structpb.Value{}
 		unmarshalValue(unm, valueNode, value, valueDesc, false)
-		if message.Fields == nil {
+		if message.GetFields() == nil {
 			message.Fields = make(map[string]*structpb.Value)
 		}
 		message.Fields[keyNode.Value] = value
