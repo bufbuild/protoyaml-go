@@ -38,17 +38,17 @@ func TestFloatJsonEncoding(t *testing.T) {
 	if err := Unmarshal(data, oval); err != nil {
 		t.Fatal(err)
 	}
-	if len(oval.RepeatedDouble) != 3 {
-		t.Fatalf("Expected 3 values, got %d", len(oval.RepeatedDouble))
+	if len(oval.GetRepeatedDouble()) != 3 {
+		t.Fatalf("Expected 3 values, got %d", len(oval.GetRepeatedDouble()))
 	}
-	if !math.IsInf(oval.RepeatedDouble[0], 1) {
-		t.Fatalf("Expected +Inf, got %f", oval.RepeatedDouble[0])
+	if !math.IsInf(oval.GetRepeatedDouble()[0], 1) {
+		t.Fatalf("Expected +Inf, got %f", oval.GetRepeatedDouble()[0])
 	}
-	if !math.IsInf(oval.RepeatedDouble[1], -1) {
-		t.Fatalf("Expected -Inf, got %f", oval.RepeatedDouble[1])
+	if !math.IsInf(oval.GetRepeatedDouble()[1], -1) {
+		t.Fatalf("Expected -Inf, got %f", oval.GetRepeatedDouble()[1])
 	}
-	if !math.IsNaN(oval.RepeatedDouble[2]) {
-		t.Fatalf("Expected NaN, got %f", oval.RepeatedDouble[2])
+	if !math.IsNaN(oval.GetRepeatedDouble()[2]) {
+		t.Fatalf("Expected NaN, got %f", oval.GetRepeatedDouble()[2])
 	}
 }
 
@@ -68,11 +68,11 @@ func TestStringEscaping(t *testing.T) {
 	if err := Unmarshal(data, oval); err != nil {
 		t.Fatal(err)
 	}
-	if len(oval.RepeatedString) != 1 {
-		t.Fatalf("Expected 1 value, got %d", len(oval.RepeatedString))
+	if len(oval.GetRepeatedString()) != 1 {
+		t.Fatalf("Expected 1 value, got %d", len(oval.GetRepeatedString()))
 	}
-	if oval.RepeatedString[0] != ival.RepeatedString[0] {
-		t.Fatalf("Expected %q, got %q", ival.RepeatedString[0], oval.RepeatedString[0])
+	if oval.GetRepeatedString()[0] != ival.GetRepeatedString()[0] {
+		t.Fatalf("Expected %q, got %q", ival.GetRepeatedString()[0], oval.GetRepeatedString()[0])
 	}
 }
 
@@ -92,11 +92,11 @@ func TestBytesEncoding(t *testing.T) {
 	if err := Unmarshal(data, oval); err != nil {
 		t.Fatal(err)
 	}
-	if len(oval.RepeatedBytes) != 1 {
-		t.Fatalf("Expected 1 value, got %d", len(oval.RepeatedBytes))
+	if len(oval.GetRepeatedBytes()) != 1 {
+		t.Fatalf("Expected 1 value, got %d", len(oval.GetRepeatedBytes()))
 	}
-	if string(oval.RepeatedBytes[0]) != string(ival.RepeatedBytes[0]) {
-		t.Fatalf("Expected %q, got %q", ival.RepeatedBytes[0], oval.RepeatedBytes[0])
+	if string(oval.GetRepeatedBytes()[0]) != string(ival.GetRepeatedBytes()[0]) {
+		t.Fatalf("Expected %q, got %q", ival.GetRepeatedBytes()[0], oval.GetRepeatedBytes()[0])
 	}
 }
 
@@ -117,22 +117,22 @@ func TestEnumEncoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(oval.RepeatedNestedEnum) != 5 {
-		t.Fatalf("Expected 5 values, got %d", len(oval.RepeatedNestedEnum))
+	if len(oval.GetRepeatedNestedEnum()) != 5 {
+		t.Fatalf("Expected 5 values, got %d", len(oval.GetRepeatedNestedEnum()))
 	}
-	if oval.RepeatedNestedEnum[0] != ival.RepeatedNestedEnum[0] {
-		t.Fatalf("Expected %v, got %v", ival.RepeatedNestedEnum[0], oval.RepeatedNestedEnum[0])
+	if oval.GetRepeatedNestedEnum()[0] != ival.GetRepeatedNestedEnum()[0] {
+		t.Fatalf("Expected %v, got %v", ival.GetRepeatedNestedEnum()[0], oval.GetRepeatedNestedEnum()[0])
 	}
-	if oval.RepeatedNestedEnum[1] != ival.RepeatedNestedEnum[1] {
-		t.Fatalf("Expected %v, got %v", ival.RepeatedNestedEnum[1], oval.RepeatedNestedEnum[1])
+	if oval.GetRepeatedNestedEnum()[1] != ival.GetRepeatedNestedEnum()[1] {
+		t.Fatalf("Expected %v, got %v", ival.GetRepeatedNestedEnum()[1], oval.GetRepeatedNestedEnum()[1])
 	}
-	if oval.RepeatedNestedEnum[2] != ival.RepeatedNestedEnum[2] {
-		t.Fatalf("Expected %v, got %v", ival.RepeatedNestedEnum[2], oval.RepeatedNestedEnum[2])
+	if oval.GetRepeatedNestedEnum()[2] != ival.GetRepeatedNestedEnum()[2] {
+		t.Fatalf("Expected %v, got %v", ival.GetRepeatedNestedEnum()[2], oval.GetRepeatedNestedEnum()[2])
 	}
-	if oval.RepeatedNestedEnum[3] != ival.RepeatedNestedEnum[3] {
-		t.Fatalf("Expected %v, got %v", ival.RepeatedNestedEnum[3], oval.RepeatedNestedEnum[3])
+	if oval.GetRepeatedNestedEnum()[3] != ival.GetRepeatedNestedEnum()[3] {
+		t.Fatalf("Expected %v, got %v", ival.GetRepeatedNestedEnum()[3], oval.GetRepeatedNestedEnum()[3])
 	}
-	if oval.RepeatedNestedEnum[4] != ival.RepeatedNestedEnum[4] {
-		t.Fatalf("Expected %v, got %v", ival.RepeatedNestedEnum[4], oval.RepeatedNestedEnum[4])
+	if oval.GetRepeatedNestedEnum()[4] != ival.GetRepeatedNestedEnum()[4] {
+		t.Fatalf("Expected %v, got %v", ival.GetRepeatedNestedEnum()[4], oval.GetRepeatedNestedEnum()[4])
 	}
 }

@@ -17,6 +17,7 @@ package protoyaml
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/bufbuild/protoyaml-go/internal/gen/proto/bufext/cel/expr/conformance/proto3"
@@ -52,7 +53,7 @@ func TestParseFieldPath(t *testing.T) {
 		{Path: `foo["b.ar"].baz`, Expect: []string{"foo", "b.ar", "baz"}},
 	} {
 		testCase := testCase
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 			result, err := parseFieldPath(testCase.Path)
 			if err != nil {
@@ -184,7 +185,7 @@ func TestCombinatorial(t *testing.T) {
 	cases := protoyamltest.InterestingTestValues()
 	for i, c := range cases {
 		c := c
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 			testRoundTrip(t, c)
 		})
@@ -195,7 +196,7 @@ func TestFuzz(t *testing.T) {
 	t.Parallel()
 	for i := int64(0); i < 100; i++ {
 		i := i
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.FormatInt(i, 10), func(t *testing.T) {
 			t.Parallel()
 			msg := &proto3.TestAllTypes{}
 			protoyamltest.PopulateMessage(msg, i)

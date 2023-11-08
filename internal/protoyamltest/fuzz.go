@@ -43,8 +43,8 @@ func populateMessage(rnd *rand.Rand, msg proto.Message, depth int) {
 		msg.Seconds = rnd.Int63n(631152000000) - 315576000000
 		// Valid values are between 0 and +999,999,999 inclusive.
 		msg.Nanos = rnd.Int31n(1000000000)
-		if msg.Seconds < 0 {
-			msg.Nanos = -msg.Nanos
+		if msg.GetSeconds() < 0 {
+			msg.Nanos = -msg.GetNanos()
 		}
 		return
 	case *timestamppb.Timestamp:

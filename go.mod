@@ -1,9 +1,9 @@
 module github.com/bufbuild/protoyaml-go
 
-go 1.19
+go 1.21
 
 require (
-	github.com/bufbuild/protovalidate-go v0.3.2
+	github.com/bufbuild/protovalidate-go v0.4.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -19,6 +19,6 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230914171853-63dfe56cc2c4.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231106192134-1baebb0a1518.2
 	github.com/google/go-cmp v0.5.9
 )
