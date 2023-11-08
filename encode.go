@@ -34,7 +34,7 @@ func Marshal(message proto.Message) ([]byte, error) {
 // It uses similar options to protojson.MarshalOptions.
 type MarshalOptions struct {
 	// The number of spaces to indent. Passed to yaml.Encoder.SetIndent.
-	// If 0, uses the default indent of yaml.v3 (4)
+	// If 0, uses the default indent of yaml.v3.
 	Indent int
 	// AllowPartial allows messages that have missing required fields to marshal
 	// without returning an error.
