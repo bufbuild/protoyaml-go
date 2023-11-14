@@ -131,3 +131,7 @@ values:
   - single_int32_wrapper: 1
   - single_int32_wrapper:
       value: 1
+  - single_any:
+        "@type": "type.googleapis.com/google.protobuf.Any"
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+        value: ""

@@ -590,6 +590,11 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message) {
 	if isNull(node) {
 		return // Null is always allowed for messages
 	}
+	u.unmarshalMessageRaw(node, message)
+}
+
+// Unmarshal the given yaml node into the given proto.Message, without custom unmarshalers.
+func (u *unmarshaler) unmarshalMessageRaw(node *yaml.Node, message proto.Message) {
 	if node.Kind != yaml.MappingNode {
 		u.addErrorf(node, "expected fields for %v, got %v",
 			message.ProtoReflect().Descriptor().FullName(), getNodeKind(node.Kind))
@@ -652,7 +657,11 @@ func unmarshalAnyMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) b
 	}
 
 	protoVal := msgType.New()
-	unm.unmarshalMessage(node, protoVal.Interface())
+	if msgType.Descriptor().FullName() == "google.protobuf.Any" {
+		unm.unmarshalMessageRaw(node, protoVal.Interface())
+	} else {
+		unm.unmarshalMessage(node, protoVal.Interface())
+	}
 	if err = anyVal.MarshalFrom(protoVal.Interface()); err != nil {
 		unm.addErrorf(node, "failed to marshal %v: %v", msgType.Descriptor().FullName(), err)
 	}
