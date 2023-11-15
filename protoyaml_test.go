@@ -267,9 +267,11 @@ func TestAnyAny_Struct(t *testing.T) {
 func testRoundTrip(t *testing.T, testCase *proto3.TestAllTypes) {
 	t.Helper()
 	t.Run("Default", func(t *testing.T) {
+		t.Parallel()
 		testRoundTripOption(t, testCase, MarshalOptions{})
 	})
 	t.Run("Alt", func(t *testing.T) {
+		t.Parallel()
 		testRoundTripOption(t, testCase, MarshalOptions{
 			UseProtoNames:   true,
 			UseEnumNumbers:  true,

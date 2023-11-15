@@ -996,13 +996,23 @@ func (u *unmarshaler) unmarshalStruct(
 			if err != nil {
 				u.addError(node, err)
 			} else if custom(u, node, msgType.New().Interface()) {
-				// Custom unmarshaler handled the errors, recursively.
+				// Custom unmarshaler handled any errors, recursively.
 				msgDesc = nil
 				ignoreDynamicType = true
 			}
 		}
 	}
 
+	u.unmarshalStructContent(node, message, msgDesc, field, ignoreDynamicType)
+}
+
+func (u *unmarshaler) unmarshalStructContent(
+	node *yaml.Node,
+	message *structpb.Struct,
+	msgDesc protoreflect.MessageDescriptor,
+	field protoreflect.FieldDescriptor,
+	ignoreDynamicType bool, // If true, ignore @type fields.
+) {
 	for i := 1; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i-1]
 		// Validate the key.
