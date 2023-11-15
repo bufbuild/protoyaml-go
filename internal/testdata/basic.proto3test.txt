@@ -233,3 +233,7 @@ internal/testdata/basic.proto3test.yaml:126:23 invalid timestamp: parsing time "
 internal/testdata/basic.proto3test.yaml:130:23 expected fields for google.protobuf.Timestamp, got sequence
  130 |   - single_timestamp: []
  130 |                       ^................. expected fields for google.protobuf.Timestamp, got sequence
+
+internal/testdata/basic.proto3test.yaml:143:20 expected bool, got "1"
+ 143 |             value: 1
+ 143 |                    ^.................... expected bool, got "1"

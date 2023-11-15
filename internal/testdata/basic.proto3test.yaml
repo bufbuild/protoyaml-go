@@ -136,3 +136,8 @@ values:
         value:
             "@type": "type.googleapis.com/google.protobuf.BoolValue"
             value: true
+  - repeated_any:
+        - "@type": "type.googleapis.com/google.protobuf.Any"
+          value:
+            "@type": "type.googleapis.com/google.protobuf.BoolValue"
+            value: 1
