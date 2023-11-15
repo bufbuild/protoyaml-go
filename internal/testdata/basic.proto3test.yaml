@@ -133,5 +133,6 @@ values:
       value: 1
   - single_any:
         "@type": "type.googleapis.com/google.protobuf.Any"
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-        value: ""
+        value:
+            "@type": "type.googleapis.com/google.protobuf.BoolValue"
+            value: true

@@ -27,9 +27,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestParseFieldPath(t *testing.T) {
@@ -220,6 +222,46 @@ func TestFuzz(t *testing.T) {
 			)
 		})
 	}
+}
+
+func TestAnyAny(t *testing.T) {
+	t.Parallel()
+	boolValue := &wrapperspb.BoolValue{
+		Value: true,
+	}
+	anyValue, err := anypb.New(boolValue)
+	if err != nil {
+		t.Fatal(err)
+	}
+	anyAnyValue, err := anypb.New(anyValue)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := &proto3.TestAllTypes{
+		SingleAny: anyAnyValue,
+	}
+	testRoundTrip(t, msg)
+}
+
+func TestAnyAny_Struct(t *testing.T) {
+	t.Parallel()
+	structValue := &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"@type": {Kind: &structpb.Value_StringValue{StringValue: "type.googleapis.com/google.protobuf.Any"}},
+			"value": {Kind: &structpb.Value_StructValue{
+				StructValue: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type": {Kind: &structpb.Value_StringValue{StringValue: "type.googleapis.com/google.protobuf.BoolValue"}},
+						"value": {Kind: &structpb.Value_BoolValue{BoolValue: true}},
+					},
+				},
+			}},
+		},
+	}
+	msg := &proto3.TestAllTypes{
+		SingleStruct: structValue,
+	}
+	testRoundTrip(t, msg)
 }
 
 func testRoundTrip(t *testing.T, testCase *proto3.TestAllTypes) {

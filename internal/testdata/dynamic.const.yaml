@@ -85,5 +85,13 @@ values:
     repeated_double: [1.5, 9007199254740991, 9007199254740992, 9007199254740993]
   dynamic_any_any:
     "@type": type.googleapis.com/google.protobuf.Any
-    type_url: type.googleapis.com/google.protobuf.BoolValue
-    value: ""
+    value:
+      "@type": type.googleapis.com/google.protobuf.Any
+      value:
+        "@type": type.googleapis.com/google.protobuf.BoolValue
+        value: true
+  dynamic_any_error:
+    "@type": type.googleapis.com/google.protobuf.Any
+    value:
+      "@type": type.googleapis.com/google.protobuf.BoolValue
+      value: "true"

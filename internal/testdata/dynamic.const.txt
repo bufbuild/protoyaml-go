@@ -165,3 +165,7 @@ internal/testdata/dynamic.const.yaml:84:81 expected float for bufext.cel.expr.co
 internal/testdata/dynamic.const.yaml:85:64 expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got integer
   85 |     repeated_double: [1.5, 9007199254740991, 9007199254740992, 9007199254740993]
   85 |                                                                ^................ expected double for bufext.cel.expr.conformance.proto3.TestAllTypes.repeated_double, got integer
+
+internal/testdata/dynamic.const.yaml:97:14 expected tag !!bool, got !!str
+  97 |       value: "true"
+  97 |              ^.......................... expected tag !!bool, got !!str
