@@ -23,7 +23,10 @@ import (
 
 	"github.com/bufbuild/protovalidate-go"
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func TestTestData(t *testing.T) {
@@ -39,6 +42,54 @@ func TestTestData(t *testing.T) {
 		return nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestParseDuration(t *testing.T) {
+	t.Parallel()
+	for _, testCase := range []struct {
+		Input    string
+		Expected *durationpb.Duration
+	}{
+		{Input: "0s", Expected: &durationpb.Duration{}},
+		{Input: "1s", Expected: &durationpb.Duration{Seconds: 1}},
+		{Input: "-1s", Expected: &durationpb.Duration{Seconds: -1}},
+		{Input: "--1s", Expected: nil},
+		{Input: "1.5s", Expected: &durationpb.Duration{Seconds: 1, Nanos: 500000000}},
+		{Input: "-1.5s", Expected: &durationpb.Duration{Seconds: -1, Nanos: -500000000}},
+		{Input: "1.000000001s", Expected: &durationpb.Duration{Seconds: 1, Nanos: 1}},
+		{Input: "1.0000000001s", Expected: nil},
+		{Input: "1.000000000s", Expected: &durationpb.Duration{Seconds: 1}},
+		{Input: "1.0000000010s", Expected: nil},
+		{Input: "-1.000000001s", Expected: &durationpb.Duration{Seconds: -1, Nanos: -1}},
+		{Input: "0s", Expected: &durationpb.Duration{}},
+		{Input: "-0s", Expected: &durationpb.Duration{}},
+		{Input: "0.1s", Expected: &durationpb.Duration{Nanos: 100000000}},
+		{Input: "-0.1s", Expected: &durationpb.Duration{Nanos: -100000000}},
+		{Input: "0.000000001s", Expected: &durationpb.Duration{Nanos: 1}},
+		{Input: "0.0000000001s", Expected: nil},
+		{Input: "0.000000000s", Expected: &durationpb.Duration{}},
+		{Input: "0.0000000010s", Expected: nil},
+		{Input: "-0.000000001s", Expected: &durationpb.Duration{Nanos: -1}},
+	} {
+		testCase := testCase
+		t.Run(testCase.Input, func(t *testing.T) {
+			t.Parallel()
+			actual := &durationpb.Duration{}
+			err := parseDuration(testCase.Input, actual)
+			if testCase.Expected == nil {
+				if err == nil {
+					t.Fatal("Expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(testCase.Expected, actual, protocmp.Transform()); diff != "" {
+					t.Errorf("Unexpected diff:\n%s", diff)
+				}
+			}
+		})
 	}
 }
 
