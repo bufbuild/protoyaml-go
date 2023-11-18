@@ -16,13 +16,13 @@ syntax = "proto3";
 
 package buf.protoyaml.test.v1;
 
+import "google/protobuf/any.proto";
 import "google/protobuf/descriptor.proto";
-import "google/protobuf/struct.proto";
 
 message ConstValues {
   string name = 1; // file name, relative to root of source tree
   string package = 2; // e.g. "foo", "foo.bar", etc.
   repeated string dependency = 3;
   google.protobuf.FileOptions options = 8;
-  map<string, google.protobuf.Value> values = 4;
+  map<string, google.protobuf.Any> values = 4;
 }
