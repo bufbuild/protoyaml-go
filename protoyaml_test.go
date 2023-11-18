@@ -229,6 +229,7 @@ func TestNullValueEnum(t *testing.T) {
 }
 
 func TestInfNanIntegers(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []string{
 		"single_int32: inf",
 		"single_int32: -inf",
