@@ -51,7 +51,11 @@ func TestParseDuration(t *testing.T) {
 		Input    string
 		Expected *durationpb.Duration
 	}{
+		{Input: "", Expected: nil},
+		{Input: "-", Expected: nil},
+		{Input: "-s", Expected: nil},
 		{Input: "0s", Expected: &durationpb.Duration{}},
+		{Input: "-0s", Expected: &durationpb.Duration{}},
 		{Input: "1s", Expected: &durationpb.Duration{Seconds: 1}},
 		{Input: "-1s", Expected: &durationpb.Duration{Seconds: -1}},
 		{Input: "--1s", Expected: nil},
