@@ -705,7 +705,11 @@ func parseDuration(txt string, duration *durationpb.Duration) error {
 			return errors.New("too many fractional second digits")
 		}
 		nanos *= int64(math.Pow10(power))
-		duration.Nanos = int32(nanos)
+		if duration.GetSeconds() >= 0 {
+			duration.Nanos = int32(nanos)
+		} else { // Sign must be consistent.
+			duration.Nanos = -int32(nanos)
+		}
 	default:
 		return errors.New("invalid duration: too many '.' characters")
 	}

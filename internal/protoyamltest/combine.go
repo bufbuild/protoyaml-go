@@ -294,7 +294,9 @@ func interestingEnumValues(enum protoreflect.EnumDescriptor) []protoreflect.Enum
 	for i := 0; i < values.Len(); i++ {
 		result = append(result, values.Get(i).Number())
 	}
-	result = append(result, 0, -1, -1>>1)
+	if enum.FullName() != "google.protobuf.NullValue" {
+		result = append(result, 0, -1, math.MaxInt32, math.MinInt32)
+	}
 	return result
 }
 
@@ -373,7 +375,7 @@ func interestingStrings() []string {
 		"",
 		// Whitespace
 		" ",
-		"\n",
+		// "\n", TODO: Uncomment once https://github.com/go-yaml/yaml/issues/1004 is fixed
 		"\t",
 		"\r",
 		// Nonprintable
