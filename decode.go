@@ -398,7 +398,7 @@ func parseUintLiteral(value string) (uint64, error) {
 	parsed, err := strconv.ParseUint(value, base, 64)
 	if err != nil {
 		parsedFloat, floatErr := strconv.ParseFloat(value, 64)
-		if floatErr != nil || parsedFloat < 0 {
+		if floatErr != nil || parsedFloat < 0 || math.IsInf(parsedFloat, 0) || math.IsNaN(parsedFloat) {
 			return 0, err
 		}
 		// See if it's actually an integer.

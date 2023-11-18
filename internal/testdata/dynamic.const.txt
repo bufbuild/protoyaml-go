@@ -38,17 +38,13 @@ internal/testdata/dynamic.const.yaml:46:35 invalid integer: strconv.ParseUint: p
   46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
   46 |                                   ^................. invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
 
-internal/testdata/dynamic.const.yaml:46:39 invalid integer: precision loss
+internal/testdata/dynamic.const.yaml:46:39 invalid integer: strconv.ParseUint: parsing "Infinity": invalid syntax
   46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
-  46 |                                       ^............. invalid integer: precision loss
+  46 |                                       ^............. invalid integer: strconv.ParseUint: parsing "Infinity": invalid syntax
 
-internal/testdata/dynamic.const.yaml:46:39 integer is too large: > 2147483647
+internal/testdata/dynamic.const.yaml:46:49 invalid integer: strconv.ParseUint: parsing "NaN": invalid syntax
   46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
-  46 |                                       ^............. integer is too large: > 2147483647
-
-internal/testdata/dynamic.const.yaml:46:49 invalid integer: precision loss
-  46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
-  46 |                                                 ^... invalid integer: precision loss
+  46 |                                                 ^... invalid integer: strconv.ParseUint: parsing "NaN": invalid syntax
 
 internal/testdata/dynamic.const.yaml:49:35 invalid float: strconv.ParseFloat: parsing "hi": invalid syntax
   49 |     repeated_float: [1, "1", 1.5, hi, Infinity, NaN, 16777215, 16777216, 16777217]

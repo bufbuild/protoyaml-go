@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/protoyaml-go/internal/gen/proto/bufext/cel/expr/conformance/proto3"
 	"github.com/bufbuild/protoyaml-go/internal/protoyamltest"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -224,6 +225,29 @@ func TestNullValueEnum(t *testing.T) {
 	}
 	if actual.GetRepeatedNullValue()[0] != structpb.NullValue_NULL_VALUE {
 		t.Fatalf("Expected %v, got %v", structpb.NullValue_NULL_VALUE, actual.GetRepeatedNullValue()[0])
+	}
+}
+
+func TestInfNanIntegers(t *testing.T) {
+	for _, testCase := range []string{
+		"single_int32: inf",
+		"single_int32: -inf",
+		"single_int32: nan",
+		"single_int64: Infinity",
+		"single_int64: -Infinity",
+		"single_int64: NaN",
+	} {
+		testCase := testCase
+		t.Run(testCase, func(t *testing.T) {
+			t.Parallel()
+			data := []byte(testCase)
+			actual := &proto3.TestAllTypes{}
+			err := Unmarshal(data, actual)
+			if err == nil {
+				t.Fatal("Expected error")
+			}
+			require.ErrorContains(t, err, "invalid syntax")
+		})
 	}
 }
 
