@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gopkg.in/yaml.v3"
 )
 
 func TestParseFieldPath(t *testing.T) {
@@ -84,42 +85,44 @@ func testDynamicRoundTrip(t *testing.T, desc protoreflect.MessageDescriptor, dat
 
 func TestDuration_DynamicWithNanos(t *testing.T) {
 	t.Parallel()
-	val := &durationpb.Duration{
-		Seconds: 3600,
-		Nanos:   1010,
+	for _, testCase := range []*durationpb.Duration{
+		{Seconds: 3600, Nanos: 1001},
+		{Seconds: -3600, Nanos: -1001},
+	} {
+		data, err := Marshal(testCase)
+		if err != nil {
+			t.Fatal(err)
+		}
+		actual := &durationpb.Duration{}
+		if err := Unmarshal(data, actual); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(testCase, actual) {
+			t.Fatalf("Expected %v, got %v", testCase, actual)
+		}
+		testDynamicRoundTrip(t, testCase.ProtoReflect().Descriptor(), data)
 	}
-	data, err := Marshal(val)
-	if err != nil {
-		t.Fatal(err)
-	}
-	actual := &durationpb.Duration{}
-	if err := Unmarshal(data, actual); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(val, actual) {
-		t.Fatalf("Expected %v, got %v", val, actual)
-	}
-	testDynamicRoundTrip(t, val.ProtoReflect().Descriptor(), data)
 }
 
 func TestTimestamp_DynamicWithNanos(t *testing.T) {
 	t.Parallel()
-	val := &timestamppb.Timestamp{
-		Seconds: 3600,
-		Nanos:   1001,
+	for _, testCase := range []*timestamppb.Timestamp{
+		{Seconds: 3600, Nanos: 1001},
+		{Seconds: -3600, Nanos: 1001},
+	} {
+		data, err := Marshal(testCase)
+		if err != nil {
+			t.Fatal(err)
+		}
+		actual := &timestamppb.Timestamp{}
+		if err := Unmarshal(data, actual); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(testCase, actual) {
+			t.Fatalf("Expected %v, got %v", testCase, actual)
+		}
+		testDynamicRoundTrip(t, testCase.ProtoReflect().Descriptor(), data)
 	}
-	data, err := Marshal(val)
-	if err != nil {
-		t.Fatal(err)
-	}
-	actual := &timestamppb.Timestamp{}
-	if err := Unmarshal(data, actual); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(val, actual) {
-		t.Fatalf("Expected %v, got %v", val, actual)
-	}
-	testDynamicRoundTrip(t, val.ProtoReflect().Descriptor(), data)
 }
 
 func testValueDynamicRoundTrip(t *testing.T, data string) {
@@ -180,6 +183,50 @@ func TestListValue_Dynamic(t *testing.T) {
 	}
 }
 
+// See https://github.com/go-yaml/yaml/issues/1004
+//
+// Update combinatorial tests to include this case again when fixed.
+func TestYamlNewLineMaps(t *testing.T) {
+	t.Parallel()
+	value := map[string]string{
+		"\n": "\n",
+	}
+	data, err := yaml.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Should be `"\n": "\n"`, but its garbled.
+	if string(data) != "? |4+\n: |4+\n" {
+		t.Fatalf("Expected garbled output, got %s", string(data))
+	}
+}
+
+// Test that non-zero null values don't round trip.
+func TestNullValueEnum(t *testing.T) {
+	t.Parallel()
+	data, err := Marshal(&proto3.TestAllTypes{
+		RepeatedNullValue: []structpb.NullValue{
+			1,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "repeatedNullValue:\n    - null\n" {
+		t.Fatalf("Expected %#v, got %#v", "repeatedNullValue:\n    - null\n", string(data))
+	}
+	actual := &proto3.TestAllTypes{}
+	if err := Unmarshal(data, actual); err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.GetRepeatedNullValue()) != 1 {
+		t.Fatalf("Expected 1, got %d", len(actual.GetRepeatedNullValue()))
+	}
+	if actual.GetRepeatedNullValue()[0] != structpb.NullValue_NULL_VALUE {
+		t.Fatalf("Expected %v, got %v", structpb.NullValue_NULL_VALUE, actual.GetRepeatedNullValue()[0])
+	}
+}
+
 func TestCombinatorial(t *testing.T) {
 	t.Parallel()
 	cases := protoyamltest.InterestingTestValues()
@@ -210,7 +257,7 @@ func TestFuzz(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cmp.Diff(msg, roundTrip, protocmp.Transform(),
+			diff := cmp.Diff(msg, roundTrip, protocmp.Transform(),
 				cmp.Comparer(func(x, y float32) bool {
 					return fmt.Sprintf("%f", x) == fmt.Sprintf("%f", y)
 				}),
@@ -218,6 +265,9 @@ func TestFuzz(t *testing.T) {
 					return fmt.Sprintf("%f", x) == fmt.Sprintf("%f", y)
 				}),
 			)
+			if diff != "" {
+				t.Fatal(diff)
+			}
 		})
 	}
 }
@@ -229,9 +279,8 @@ func testRoundTrip(t *testing.T, testCase *proto3.TestAllTypes) {
 	})
 	t.Run("Alt", func(t *testing.T) {
 		testRoundTripOption(t, testCase, MarshalOptions{
-			UseProtoNames:   true,
-			UseEnumNumbers:  true,
-			EmitUnpopulated: true,
+			UseProtoNames:  true,
+			UseEnumNumbers: true,
 		})
 	})
 }
@@ -273,11 +322,14 @@ func testUnmarshal(t *testing.T, testCase *proto3.TestAllTypes, data []byte) {
 	}
 
 	// Compare the two messages
-	cmp.Diff(testCase, roundTrip, protocmp.Transform(),
+	diff := cmp.Diff(testCase, roundTrip, protocmp.Transform(),
 		cmp.Comparer(func(x, y float32) bool {
 			return fmt.Sprintf("%f", x) == fmt.Sprintf("%f", y)
 		}),
 		cmp.Comparer(func(x, y float64) bool {
 			return fmt.Sprintf("%f", x) == fmt.Sprintf("%f", y)
 		}))
+	if diff != "" {
+		t.Fatal(diff)
+	}
 }
