@@ -23,10 +23,11 @@ import (
 
 	"github.com/bufbuild/protovalidate-go"
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 )
 
-func TestTestData(t *testing.T) {
+func TestGoldenFiles(t *testing.T) {
 	t.Parallel()
 	// Walk the test data directory for .yaml files
 	if err := filepath.Walk("internal/testdata", func(path string, info os.FileInfo, err error) error {
@@ -88,9 +89,7 @@ func testRunYAMLFile(t *testing.T, testFile string) {
 	expectedFile, err := os.Open(expectedFileName)
 	var expectedData []byte
 	if err != nil {
-		if !os.IsNotExist(err) {
-			t.Fatal(err)
-		}
+		t.Fatal(err)
 	} else {
 		defer expectedFile.Close()
 		expectedData, err = io.ReadAll(expectedFile)
@@ -100,6 +99,7 @@ func testRunYAMLFile(t *testing.T, testFile string) {
 	}
 	expectedText := string(expectedData)
 	if expectedText != errorText {
-		t.Errorf("%s: Test %s failed:\nExpected:\n%s\nActual:\n%s", expectedFileName, testFile, expectedText, errorText)
+		diff := cmp.Diff(expectedText, errorText)
+		t.Errorf("%s: Test %s failed:\nExpected:\n%s\nActual:\n%s\nDiff:\n%s", expectedFileName, testFile, expectedText, errorText, diff)
 	}
 }
