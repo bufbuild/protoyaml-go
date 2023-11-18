@@ -244,9 +244,6 @@ func TestInfNanIntegers(t *testing.T) {
 			data := []byte(testCase)
 			actual := &proto3.TestAllTypes{}
 			err := Unmarshal(data, actual)
-			if err == nil {
-				t.Fatal("Expected error")
-			}
 			require.ErrorContains(t, err, "invalid syntax")
 		})
 	}
