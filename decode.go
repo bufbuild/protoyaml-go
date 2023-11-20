@@ -34,6 +34,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const atTypeFieldName = "@type"
+
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
 type Validator interface {
 	// Validate the given message.
@@ -153,7 +155,7 @@ func (u *unmarshaler) findAnyTypeURL(node *yaml.Node) string {
 	for i := 1; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i-1]
 		valueNode := node.Content[i]
-		if keyNode.Value == "@type" && u.checkKind(valueNode, yaml.ScalarNode) {
+		if keyNode.Value == atTypeFieldName && u.checkKind(valueNode, yaml.ScalarNode) {
 			typeURL = valueNode.Value
 			break
 		}
@@ -526,10 +528,10 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 				switch keyNode.Value {
 				case "value":
 					customNode = node.Content[i]
-				case "@type":
+				case atTypeFieldName:
 					continue // Skip the @type field for Any messages
 				default:
-					u.addErrorf(keyNode, "unknown field %#v, expended one of %v", keyNode.Value, []string{"value", "@type"})
+					u.addErrorf(keyNode, "unknown field %#v, expended one of %v", keyNode.Value, []string{"value", atTypeFieldName})
 					return
 				}
 			}
@@ -551,7 +553,7 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
 		if u.checkKind(keyNode, yaml.ScalarNode) {
-			if forAny && keyNode.Value == "@type" {
+			if forAny && keyNode.Value == atTypeFieldName {
 				continue // Skip the @type field for Any messages
 			}
 			// Get the field Name, JSONName, or Number
