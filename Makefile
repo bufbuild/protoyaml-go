@@ -59,8 +59,8 @@ generate: $(BIN)/license-header $(BIN)/buf ## Regenerate code and licenses
 		--copyright-holder "Buf Technologies, Inc." \
 		--year-range "$(COPYRIGHT_YEARS)" $(LICENSE_IGNORE)
 
-.PHONY: generate-golden
-generate-golden:
+.PHONY: golden
+golden:
 	find internal/testdata -name "*.txt" -type f -delete
 	go run internal/cmd/generate-txt-testdata/main.go internal/testdata
 

@@ -106,13 +106,9 @@ internal/testdata/basic.proto3test.yaml:53:19 invalid integer: strconv.ParseUint
   53 |   - single_int32: ---1
   53 |                   ^..................... invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
 
-internal/testdata/basic.proto3test.yaml:54:19 invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:54:19 invalid integer: strconv.ParseUint: parsing "inf": invalid syntax
   54 |   - single_int32: inf
-  54 |                   ^..................... invalid integer: precision loss
-
-internal/testdata/basic.proto3test.yaml:54:19 integer is too large: > 2147483647
-  54 |   - single_int32: inf
-  54 |                   ^..................... integer is too large: > 2147483647
+  54 |                   ^..................... invalid integer: strconv.ParseUint: parsing "inf": invalid syntax
 
 internal/testdata/basic.proto3test.yaml:55:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
   55 |   - single_int32: .inf

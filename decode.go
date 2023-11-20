@@ -184,20 +184,6 @@ func (u *unmarshaler) findAnyType(node *yaml.Node) (protoreflect.MessageType, er
 	return u.resolveAnyType(typeURL)
 }
 
-func (u *unmarshaler) findType(msgDesc protoreflect.MessageDescriptor) protoreflect.MessageType {
-	var msgType protoreflect.MessageType
-	var err error
-	if u.options.Resolver != nil {
-		msgType, err = u.options.Resolver.FindMessageByName(msgDesc.FullName())
-	} else { // Use the global registry
-		msgType, err = protoregistry.GlobalTypes.FindMessageByName(msgDesc.FullName())
-	}
-	if err != nil {
-		return nil
-	}
-	return msgType
-}
-
 // Unmarshal the field based on the field kind, ignoring IsList and IsMap,
 // which are handled by the caller.
 func (u *unmarshaler) unmarshalScalar(
@@ -388,34 +374,6 @@ func getNodeKind(kind yaml.Kind) string {
 	return fmt.Sprintf("unknown(%d)", kind)
 }
 
-func getExpectedNodeKind(field protoreflect.FieldDescriptor, forList bool) string {
-	if field.IsList() && !forList {
-		return "sequence"
-	}
-	switch field.Kind() {
-	case protoreflect.EnumKind:
-		return "enum"
-	case protoreflect.BoolKind:
-		return "boolean"
-	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		return "int32"
-	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		return "int64"
-	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		return "uint32"
-	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		return "uint64"
-	case protoreflect.FloatKind:
-		return "float"
-	case protoreflect.DoubleKind:
-		return "double"
-	case protoreflect.MessageKind:
-		return "mapping"
-	default:
-		return "scalar"
-	}
-}
-
 // Parses Octal, Hex, Binary, Decimal, and Unsigned Integer Float literals.
 //
 // Conversion through JSON/YAML may have converted integers into floats, including
@@ -440,7 +398,7 @@ func parseUintLiteral(value string) (uint64, error) {
 	parsed, err := strconv.ParseUint(value, base, 64)
 	if err != nil {
 		parsedFloat, floatErr := strconv.ParseFloat(value, 64)
-		if floatErr != nil || parsedFloat < 0 {
+		if floatErr != nil || parsedFloat < 0 || math.IsInf(parsedFloat, 0) || math.IsNaN(parsedFloat) {
 			return 0, err
 		}
 		// See if it's actually an integer.
@@ -463,33 +421,6 @@ func (lit intLit) checkI32(field protoreflect.FieldDescriptor) error {
 		return fmt.Errorf("expected int32 for %v, got int64", field.FullName())
 	case !lit.negative && lit.value >= 1<<31: // Overflow.
 		return fmt.Errorf("expected int32 for %v, got int64", field.FullName())
-	}
-	return nil
-}
-
-func (lit intLit) checkI64(field protoreflect.FieldDescriptor) error {
-	switch {
-	case lit.negative && lit.value > 1<<63: // Underflow.
-		return fmt.Errorf("expected int64 for %v, but: out of range", field.FullName())
-	case !lit.negative && lit.value >= 1<<63: // Overflow.
-		return fmt.Errorf("expected int64 for %v, got uint64", field.FullName())
-	}
-	return nil
-}
-
-func (lit intLit) checkU32(field protoreflect.FieldDescriptor) error {
-	switch {
-	case lit.negative: // Underflow.
-		return fmt.Errorf("expected uint32 for %v, got negative", field.FullName())
-	case lit.value >= 1<<32: // Overflow.
-		return fmt.Errorf("expected uint32 for %v, got uint64", field.FullName())
-	}
-	return nil
-}
-
-func (lit intLit) checkU64(field protoreflect.FieldDescriptor) error {
-	if lit.negative { // Underflow.
-		return fmt.Errorf("expected uint64 for %v, got negative", field.FullName())
 	}
 	return nil
 }
@@ -868,7 +799,7 @@ func unmarshalValueMsg(unm *unmarshaler, node *yaml.Node, message proto.Message)
 	if !ok {
 		value = &structpb.Value{}
 	}
-	unmarshalValue(unm, node, value, nil, false)
+	unm.unmarshalValue(node, value)
 	if !ok {
 		return dynSetValue(message, value)
 	}
@@ -883,7 +814,7 @@ func unmarshalListValueMsg(unm *unmarshaler, node *yaml.Node, message proto.Mess
 	if !ok {
 		listValue = &structpb.ListValue{}
 	}
-	unmarshalListValue(unm, node, listValue, nil)
+	unm.unmarshalListValue(node, listValue)
 	if !ok {
 		return dynSetListValue(message, listValue)
 	}
@@ -898,7 +829,7 @@ func unmarshalStructMsg(unm *unmarshaler, node *yaml.Node, message proto.Message
 	if !ok {
 		structVal = &structpb.Struct{}
 	}
-	unmarshalStruct(unm, node, structVal, nil, nil)
+	unm.unmarshalStruct(node, structVal)
 	if !ok {
 		return dynSetStruct(message, structVal)
 	}
@@ -907,58 +838,38 @@ func unmarshalStructMsg(unm *unmarshaler, node *yaml.Node, message proto.Message
 
 // Unmarshal the given yaml node into a structpb.Value, using the given
 // field descriptor to validate the type, if non-nil.
-func unmarshalValue(
-	unm *unmarshaler,
+func (u *unmarshaler) unmarshalValue(
 	node *yaml.Node,
 	value *structpb.Value,
-	field protoreflect.FieldDescriptor, forList bool,
 ) {
-	// Check for a custom unmarshaler
-	if field != nil && field.Kind() == protoreflect.MessageKind && !field.IsMap() {
-		if custom, ok := unm.custom[field.Message().FullName()]; ok {
-			msgType := unm.findType(field.Message())
-			if msgType != nil && custom(unm, node, msgType.New().Interface()) {
-				field = nil // Custom unmarshaler handled the errors.
-			}
-		}
-	}
-
 	// Unmarshal the value.
 	switch node.Kind {
 	case yaml.SequenceNode: // A list.
 		listValue := &structpb.ListValue{}
-		unmarshalListValue(unm, node, listValue, field)
+		u.unmarshalListValue(node, listValue)
 		value.Kind = &structpb.Value_ListValue{ListValue: listValue}
 	case yaml.MappingNode: // A message or map.
 		structVal := &structpb.Struct{}
-		unmarshalStruct(unm, node, structVal, nil, field)
+		u.unmarshalStruct(node, structVal)
 		value.Kind = &structpb.Value_StructValue{StructValue: structVal}
 	case yaml.ScalarNode:
-		if field != nil && field.IsList() && !forList {
-			unm.addErrorf(node, "expected %s for %v, got scalar", getExpectedNodeKind(field, forList), field.FullName())
-		}
-		unmarshalScalarValue(unm, node, value, field)
+		u.unmarshalScalarValue(node, value)
 	case 0:
 		value.Kind = &structpb.Value_NullValue{}
 	default:
-		unm.addErrorf(node, "unimplemented value kind: %v", getNodeKind(node.Kind))
+		u.addErrorf(node, "unimplemented value kind: %v", getNodeKind(node.Kind))
 	}
 }
 
 // Unmarshal the given yaml node into a structpb.ListValue, using the given field
 // descriptor to validate each item, if non-nil.
-func unmarshalListValue(
-	unm *unmarshaler,
+func (u *unmarshaler) unmarshalListValue(
 	node *yaml.Node,
 	list *structpb.ListValue,
-	field protoreflect.FieldDescriptor,
 ) {
-	if field != nil && !field.IsList() {
-		unm.addErrorf(node, "expected %s for %v, got sequence", getExpectedNodeKind(field, false), field.FullName())
-	}
 	for _, itemNode := range node.Content {
 		itemValue := &structpb.Value{}
-		unmarshalValue(unm, itemNode, itemValue, field, true)
+		u.unmarshalValue(itemNode, itemValue)
 		list.Values = append(list.GetValues(), itemValue)
 	}
 }
@@ -968,49 +879,21 @@ func unmarshalListValue(
 // Structs can represent either a message or a map.
 // For messages, the message descriptor can be provided or inferred from the node.
 // For maps, the field descriptor can be provided to validate the map keys/values.
-func unmarshalStruct(
-	unm *unmarshaler,
+func (u *unmarshaler) unmarshalStruct(
 	node *yaml.Node,
 	message *structpb.Struct,
-	msgDesc protoreflect.MessageDescriptor,
-	field protoreflect.FieldDescriptor,
 ) {
-	if field != nil {
-		// Validate the field is a message or map.
-		if !field.IsMap() && field.Kind() != protoreflect.MessageKind {
-			unm.addErrorf(node, "expected %s for %v, got mapping", getExpectedNodeKind(field, false), field.FullName())
-		}
-	} else if msgDesc == nil {
-		// Try to find the message descriptor.
-		msgType, _ := unm.findAnyType(node)
-		if msgType != nil {
-			msgDesc = msgType.Descriptor()
-		}
-	}
-
 	for i := 1; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i-1]
 		// Validate the key.
-		if !unm.checkKind(keyNode, yaml.ScalarNode) {
+		if !u.checkKind(keyNode, yaml.ScalarNode) {
 			continue
-		} else if field != nil && field.MapKey() != nil {
-			// Try to unmarshal the key, to validate it.
-			tmp := &structpb.Value{}
-			unmarshalValue(unm, keyNode, tmp, field.MapKey(), false)
-		}
-
-		// Try to resolve the value descriptor.
-		var valueDesc protoreflect.FieldDescriptor
-		if msgDesc != nil {
-			valueDesc = findField(keyNode.Value, msgDesc.Fields())
-		} else if field != nil && field.MapValue() != nil {
-			valueDesc = field.MapValue()
 		}
 
 		// Unmarshal the value.
 		valueNode := node.Content[i]
 		value := &structpb.Value{}
-		unmarshalValue(unm, valueNode, value, valueDesc, false)
+		u.unmarshalValue(valueNode, value)
 		if message.GetFields() == nil {
 			message.Fields = make(map[string]*structpb.Value)
 		}
@@ -1018,153 +901,48 @@ func unmarshalStruct(
 	}
 }
 
-func unmarshalScalarValue(
-	unm *unmarshaler,
-	node *yaml.Node,
-	value *structpb.Value,
-	field protoreflect.FieldDescriptor,
-) {
+func (u *unmarshaler) unmarshalScalarValue(node *yaml.Node, value *structpb.Value) {
 	switch node.Tag {
 	case "!!null":
-		unmarshalScalarNull(unm, node, value, field)
+		value.Kind = &structpb.Value_NullValue{}
 	case "!!bool":
-		unmarshalScalarBool(unm, node, value, field)
+		u.unmarshalScalarBool(node, value)
 	default:
-		unmarshalScalarString(unm, node, value, field)
+		u.unmarshalScalarString(node, value)
 	}
-}
-
-// Can be a Message, NULL_VALUE enum, or a string.
-func unmarshalScalarNull(
-	unm *unmarshaler,
-	node *yaml.Node,
-	value *structpb.Value,
-	field protoreflect.FieldDescriptor,
-) {
-	if field != nil {
-		switch field.Kind() {
-		case protoreflect.BytesKind:
-			checkBytes(unm, node, field)
-		case protoreflect.MessageKind, protoreflect.StringKind:
-		default:
-			unm.addErrorf(node, "expected %s for %v, got null", getExpectedNodeKind(field, true), field.FullName())
-		}
-	}
-	value.Kind = &structpb.Value_NullValue{}
 }
 
 // bool, string, or bytes.
-func unmarshalScalarBool(
-	unm *unmarshaler,
-	node *yaml.Node,
-	value *structpb.Value,
-	field protoreflect.FieldDescriptor,
-) {
-	if field != nil {
-		switch field.Kind() {
-		case protoreflect.BoolKind, protoreflect.StringKind:
-		case protoreflect.BytesKind:
-			checkBytes(unm, node, field)
-		default:
-			unm.addErrorf(node, "expected %s for %v, got bool", getExpectedNodeKind(field, true), field.FullName())
-		}
-	}
+func (u *unmarshaler) unmarshalScalarBool(node *yaml.Node, value *structpb.Value) {
 	switch node.Value {
 	case "true":
 		value.Kind = &structpb.Value_BoolValue{BoolValue: true}
 	case "false":
 		value.Kind = &structpb.Value_BoolValue{BoolValue: false}
 	default: // This is a string, not a bool.
-		if field != nil && field.Kind() != protoreflect.StringKind {
-			unm.addErrorf(node, "expected %s for %v, got string", getExpectedNodeKind(field, true), field.FullName())
-		}
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
 	}
 }
 
 // Can be string, bytes, float, or int.
-func unmarshalScalarString(unm *unmarshaler, node *yaml.Node, value *structpb.Value, field protoreflect.FieldDescriptor) {
+func (u *unmarshaler) unmarshalScalarString(node *yaml.Node, value *structpb.Value) {
 	floatVal, err := strconv.ParseFloat(node.Value, 64)
 	if err != nil {
-		// String or bytes.
-		if field != nil {
-			switch field.Kind() {
-			case protoreflect.StringKind:
-			case protoreflect.BytesKind:
-				checkBytes(unm, node, field)
-			default:
-				unm.addErrorf(node, "expected %s for %v, got string", getExpectedNodeKind(field, true), field.FullName())
-			}
-		}
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
 		return
 	}
 
 	if math.IsInf(floatVal, 0) || math.IsNaN(floatVal) {
 		// String or float.
-		if field != nil {
-			switch field.Kind() {
-			case protoreflect.StringKind, protoreflect.FloatKind, protoreflect.DoubleKind:
-			case protoreflect.BytesKind:
-				checkBytes(unm, node, field)
-			default:
-				unm.addErrorf(node, "expected %s for %v, got float", getExpectedNodeKind(field, true), field.FullName())
-			}
-		}
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
 		return
 	}
 
 	// String, float, or int.
-	unmarshalScalarFloat(unm, node, value, field, floatVal)
+	u.unmarshalScalarFloat(node, value, floatVal)
 }
 
-func (u *unmarshaler) checkI32(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
-	if litErr != nil {
-		u.addErrorf(node, "expected int32 for %v, but: %w", field.FullName(), litErr)
-	} else if err := lit.checkI32(field); err != nil {
-		u.addError(node, err)
-	}
-}
-
-func (u *unmarshaler) checkI64(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
-	if litErr != nil {
-		u.addErrorf(node, "expected int64 for %v, but: %w", field.FullName(), litErr)
-	} else if err := lit.checkI64(field); err != nil {
-		u.addError(node, err)
-	}
-}
-func (u *unmarshaler) checkU32(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
-	if litErr != nil {
-		u.addErrorf(node, "expected uint32 for %v, but: %w", field.FullName(), litErr)
-	} else if err := lit.checkU32(field); err != nil {
-		u.addError(node, err)
-	}
-}
-func (u *unmarshaler) checkU64(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error) {
-	if litErr != nil {
-		u.addErrorf(node, "expected uint64 for %v, but: %w", field.FullName(), litErr)
-	} else if err := lit.checkU64(field); err != nil {
-		u.addError(node, err)
-	}
-}
-
-func (u *unmarshaler) checkF32(node *yaml.Node, field protoreflect.FieldDescriptor, lit intLit, litErr error, floatVal float64) {
-	if math.Abs(floatVal) > math.MaxFloat32 {
-		u.addErrorf(node, "expected %s for %v, got float64", getExpectedNodeKind(field, true), field.FullName())
-	} else if litErr == nil && uint64(float32(math.Abs(floatVal))) != lit.value {
-		// Loss of precision.
-		u.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
-	}
-}
-
-func unmarshalScalarFloat(
-	unm *unmarshaler,
-	node *yaml.Node,
-	value *structpb.Value,
-	field protoreflect.FieldDescriptor,
-	floatVal float64,
-) {
+func (u *unmarshaler) unmarshalScalarFloat(node *yaml.Node, value *structpb.Value, floatVal float64) {
 	// Try to parse it as in integer, to see if the float representation is lossy.
 	lit, litErr := parseIntLiteral(node.Value)
 
@@ -1174,39 +952,6 @@ func unmarshalScalarFloat(
 		value.Kind = &structpb.Value_NumberValue{NumberValue: floatVal}
 	} else { // Keep string representation.
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
-	}
-
-	if field == nil {
-		return
-	}
-
-	// Check for type/precision errors.
-	switch field.Kind() {
-	case protoreflect.StringKind:
-	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		unm.checkI32(node, field, lit, litErr)
-	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		unm.checkI64(node, field, lit, litErr)
-	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		unm.checkU32(node, field, lit, litErr)
-	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		unm.checkU64(node, field, lit, litErr)
-	case protoreflect.FloatKind:
-		unm.checkF32(node, field, lit, litErr, floatVal)
-	case protoreflect.DoubleKind:
-		if litErr == nil && floatUintVal != lit.value { // Loss of precision.
-			unm.addErrorf(node, "expected %s for %v, got integer", getExpectedNodeKind(field, true), field.FullName())
-		}
-	case protoreflect.BytesKind:
-		checkBytes(unm, node, field)
-	default:
-		unm.addErrorf(node, "expected %s for %v, got number", getExpectedNodeKind(field, true), field.FullName())
-	}
-}
-
-func checkBytes(unm *unmarshaler, node *yaml.Node, field protoreflect.FieldDescriptor) {
-	if _, err := base64.StdEncoding.DecodeString(node.Value); err != nil {
-		unm.addErrorf(node, "expected base64 for %v, but %v", field.FullName(), err)
 	}
 }
 

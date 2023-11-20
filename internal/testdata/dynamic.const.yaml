@@ -72,7 +72,7 @@ values:
       true: 1
   dynamic_any:
     "@type": type.googleapis.com/bufext.cel.expr.conformance.proto3.TestAllTypes
-    any_value:
+    single_any:
       "@type": type.googleapis.com/google.protobuf.BoolValue
       value: hi
   dynamic_number_errors:
