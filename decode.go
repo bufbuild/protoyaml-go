@@ -604,10 +604,12 @@ const (
 // Format is decimal seconds with up to 9 fractional digits, followed by an 's'.
 func parseDuration(txt string, duration *durationpb.Duration) error {
 	// Remove trailing s.
-	if txt[len(txt)-1] != 's' {
+	txt = strings.TrimSpace(txt)
+	if len(txt) == 0 || txt[len(txt)-1] != 's' {
 		return errors.New("missing trailing 's'")
 	}
 	value := txt[:len(txt)-1]
+	isNeg := strings.HasPrefix(value, "-")
 
 	// Split into seconds and nanos.
 	parts := strings.Split(value, ".")
@@ -636,10 +638,10 @@ func parseDuration(txt string, duration *durationpb.Duration) error {
 			return errors.New("too many fractional second digits")
 		}
 		nanos *= int64(math.Pow10(power))
-		if duration.GetSeconds() >= 0 {
-			duration.Nanos = int32(nanos)
-		} else { // Sign must be consistent.
+		if isNeg {
 			duration.Nanos = -int32(nanos)
+		} else {
+			duration.Nanos = int32(nanos)
 		}
 	default:
 		return errors.New("invalid duration: too many '.' characters")
