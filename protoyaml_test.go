@@ -302,12 +302,12 @@ func TestAnyValue(t *testing.T) {
 		t.Run(testCase.Input, func(t *testing.T) {
 			t.Parallel()
 			data := []byte(`{"@type": "type.googleapis.com/google.protobuf.Value", value: ` + testCase.Input + `}`)
-			any := &anypb.Any{}
-			if err := Unmarshal(data, any); err != nil {
+			anyVal := &anypb.Any{}
+			if err := Unmarshal(data, anyVal); err != nil {
 				t.Fatal(err)
 			}
 			actual := &structpb.Value{}
-			if err := any.UnmarshalTo(actual); err != nil {
+			if err := anyVal.UnmarshalTo(actual); err != nil {
 				t.Fatal(err)
 			}
 			if diff := cmp.Diff(testCase.Expected, actual, protocmp.Transform()); diff != "" {
