@@ -88,6 +88,10 @@ func TestDuration_DynamicWithNanos(t *testing.T) {
 	for _, testCase := range []*durationpb.Duration{
 		{Seconds: 3600, Nanos: 1001},
 		{Seconds: -3600, Nanos: -1001},
+		{Seconds: 3600},
+		{Seconds: -3600},
+		{Nanos: 1001},
+		{Nanos: -1001},
 	} {
 		data, err := Marshal(testCase)
 		if err != nil {
