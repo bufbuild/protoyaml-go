@@ -513,37 +513,42 @@ func isNull(node *yaml.Node) bool {
 	return node.Tag == "!!null"
 }
 
+func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node {
+	if !forAny {
+		return node
+	}
+	if !u.checkKind(node, yaml.MappingNode) {
+		return nil
+	}
+	var valueNode *yaml.Node
+	for i := 1; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i-1]
+		switch keyNode.Value {
+		case "value":
+			valueNode = node.Content[i]
+		case atTypeFieldName:
+			continue // Skip the @type field for Any messages
+		default:
+			u.addErrorf(keyNode, "unknown field %#v, expended one of %v", keyNode.Value, []string{"value", atTypeFieldName})
+			return nil
+		}
+	}
+	if valueNode == nil {
+		u.addErrorf(node, "missing \"value\" field")
+	}
+	return valueNode
+}
+
 // Unmarshal the given yaml node into the given proto.Message.
 func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool) {
 	// Check for a custom unmarshaler
 
 	if custom, ok := u.custom[message.ProtoReflect().Descriptor().FullName()]; ok {
-		var valueNode *yaml.Node
-		if forAny { // For Any messages, the custom unmarshaler is expecting the 'value' field.
-			if !u.checkKind(node, yaml.MappingNode) {
-				return
-			}
-			for i := 1; i < len(node.Content); i += 2 {
-				keyNode := node.Content[i-1]
-				switch keyNode.Value {
-				case "value":
-					valueNode = node.Content[i]
-				case atTypeFieldName:
-					continue // Skip the @type field for Any messages
-				default:
-					u.addErrorf(keyNode, "unknown field %#v, expended one of %v", keyNode.Value, []string{"value", atTypeFieldName})
-					return
-				}
-			}
-			if valueNode == nil {
-				u.addErrorf(node, "missing \"value\" field")
-				return
-			}
-		} else {
-			valueNode = node
-		}
-		if custom(u, valueNode, message) {
-			return // Custom unmarshaler handled the decoding
+		valueNode := u.findNodeForCustom(node, forAny)
+		if valueNode == nil {
+			return // Error already added.
+		} else if custom(u, valueNode, message) {
+			return // Custom unmarshaler handled the decoding.
 		}
 	}
 	if isNull(node) {
