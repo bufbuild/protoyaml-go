@@ -157,3 +157,7 @@ internal/testdata/dynamic.const.yaml:84:81 invalid float: strconv.ParseFloat: pa
 internal/testdata/dynamic.const.yaml:88:5 unknown field "seconds", expended one of [value @type]
   88 |     seconds: 1
   88 |     ^................................... unknown field "seconds", expended one of [value @type]
+
+internal/testdata/dynamic.const.yaml:111:5 missing "value" field
+ 111 |     "@type": type.googleapis.com/google.protobuf.BoolValue
+ 111 |     ^..................................................... missing "value" field

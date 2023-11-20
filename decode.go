@@ -518,7 +518,7 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 	// Check for a custom unmarshaler
 
 	if custom, ok := u.custom[message.ProtoReflect().Descriptor().FullName()]; ok {
-		customNode := node
+		var valueNode *yaml.Node
 		if forAny { // For Any messages, the custom unmarshaler is expecting the 'value' field.
 			if !u.checkKind(node, yaml.MappingNode) {
 				return
@@ -527,7 +527,7 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 				keyNode := node.Content[i-1]
 				switch keyNode.Value {
 				case "value":
-					customNode = node.Content[i]
+					valueNode = node.Content[i]
 				case atTypeFieldName:
 					continue // Skip the @type field for Any messages
 				default:
@@ -535,8 +535,14 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 					return
 				}
 			}
+			if valueNode == nil {
+				u.addErrorf(node, "missing \"value\" field")
+				return
+			}
+		} else {
+			valueNode = node
 		}
-		if custom(u, customNode, message) {
+		if custom(u, valueNode, message) {
 			return // Custom unmarshaler handled the decoding
 		}
 	}

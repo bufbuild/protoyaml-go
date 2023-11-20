@@ -107,3 +107,5 @@ values:
     value:
       - true
       - 1
+  dynamic_no_value:
+    "@type": type.googleapis.com/google.protobuf.BoolValue
