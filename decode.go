@@ -513,6 +513,8 @@ func isNull(node *yaml.Node) bool {
 	return node.Tag == "!!null"
 }
 
+// Resolve the node to be used with the custom unmarshaler. Returns nil if the
+// there was an error.
 func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node {
 	if !forAny {
 		return node
