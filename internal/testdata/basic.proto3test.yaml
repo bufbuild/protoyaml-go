@@ -131,3 +131,6 @@ values:
   - single_int32_wrapper: 1
   - single_int32_wrapper:
       value: 1
+  - single_int32_wrapper:
+      "@type": type.googleapis.com/google.protobuf.Int32Value
+      value: 1

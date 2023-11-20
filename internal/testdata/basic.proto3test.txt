@@ -229,3 +229,7 @@ internal/testdata/basic.proto3test.yaml:126:23 invalid timestamp: parsing time "
 internal/testdata/basic.proto3test.yaml:130:23 expected fields for google.protobuf.Timestamp, got sequence
  130 |   - single_timestamp: []
  130 |                       ^................. expected fields for google.protobuf.Timestamp, got sequence
+
+internal/testdata/basic.proto3test.yaml:135:7 unknown field "@type", expended one of [value]
+ 135 |       "@type": type.googleapis.com/google.protobuf.Int32Value
+ 135 |       ^...................................................... unknown field "@type", expended one of [value]
