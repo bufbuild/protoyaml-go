@@ -256,61 +256,30 @@ func TestInfNanIntegers(t *testing.T) {
 
 func TestAnyValue(t *testing.T) {
 	t.Parallel()
-	for _, testCase := range []struct {
-		Input    string
-		Expected *structpb.Value
-	}{
-		{
-			Input: "{}",
-			Expected: &structpb.Value{
-				Kind: &structpb.Value_StructValue{
-					StructValue: &structpb.Struct{},
-				},
-			},
-		},
-		{
-			Input: "1",
-			Expected: &structpb.Value{
-				Kind: &structpb.Value_NumberValue{
-					NumberValue: 1,
-				},
-			},
-		},
-		{
-			Input: "[1, hi]",
-			Expected: &structpb.Value{
-				Kind: &structpb.Value_ListValue{
-					ListValue: &structpb.ListValue{
-						Values: []*structpb.Value{
-							{
-								Kind: &structpb.Value_NumberValue{
-									NumberValue: 1,
-								},
-							},
-							{
-								Kind: &structpb.Value_StringValue{
-									StringValue: "hi",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	for _, testCase := range []string{
+		"{}", "1", "[1, \"hi\"]",
 	} {
 		testCase := testCase
-		t.Run(testCase.Input, func(t *testing.T) {
+		t.Run(testCase, func(t *testing.T) {
 			t.Parallel()
-			data := []byte(`{"@type": "type.googleapis.com/google.protobuf.Value", value: ` + testCase.Input + `}`)
-			anyVal := &anypb.Any{}
-			if err := Unmarshal(data, anyVal); err != nil {
+			data := []byte(`{"@type": "type.googleapis.com/google.protobuf.Value", "value": ` + testCase + `}`)
+			yamlAnyVal := &anypb.Any{}
+			if err := Unmarshal(data, yamlAnyVal); err != nil {
 				t.Fatal(err)
 			}
-			actual := &structpb.Value{}
-			if err := anyVal.UnmarshalTo(actual); err != nil {
+			jsonAnyVal := &anypb.Any{}
+			if err := protojson.Unmarshal(data, jsonAnyVal); err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(testCase.Expected, actual, protocmp.Transform()); diff != "" {
+			actualYaml := &structpb.Value{}
+			if err := yamlAnyVal.UnmarshalTo(actualYaml); err != nil {
+				t.Fatal(err)
+			}
+			actualJSON := &structpb.Value{}
+			if err := jsonAnyVal.UnmarshalTo(actualJSON); err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(actualJSON, actualYaml, protocmp.Transform()); diff != "" {
 				t.Errorf("Unexpected diff:\n%s", diff)
 			}
 		})
