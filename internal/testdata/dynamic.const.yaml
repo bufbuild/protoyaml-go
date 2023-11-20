@@ -97,3 +97,13 @@ values:
       value:
         "@type": type.googleapis.com/google.protobuf.BoolValue
         value: true
+  dynamic_struct:
+    "@type": type.googleapis.com/google.protobuf.Struct
+    value:
+      my_field: true
+      other_field: 1
+  dynamic_list:
+    "@type": type.googleapis.com/google.protobuf.ListValue
+    value:
+      - true
+      - 1

@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -249,6 +250,69 @@ func TestInfNanIntegers(t *testing.T) {
 			actual := &proto3.TestAllTypes{}
 			err := Unmarshal(data, actual)
 			require.ErrorContains(t, err, "invalid syntax")
+		})
+	}
+}
+
+func TestAnyValue(t *testing.T) {
+	t.Parallel()
+	for _, testCase := range []struct {
+		Input    string
+		Expected *structpb.Value
+	}{
+		{
+			Input: "{}",
+			Expected: &structpb.Value{
+				Kind: &structpb.Value_StructValue{
+					StructValue: &structpb.Struct{},
+				},
+			},
+		},
+		{
+			Input: "1",
+			Expected: &structpb.Value{
+				Kind: &structpb.Value_NumberValue{
+					NumberValue: 1,
+				},
+			},
+		},
+		{
+			Input: "[1, hi]",
+			Expected: &structpb.Value{
+				Kind: &structpb.Value_ListValue{
+					ListValue: &structpb.ListValue{
+						Values: []*structpb.Value{
+							{
+								Kind: &structpb.Value_NumberValue{
+									NumberValue: 1,
+								},
+							},
+							{
+								Kind: &structpb.Value_StringValue{
+									StringValue: "hi",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	} {
+		testCase := testCase
+		t.Run(testCase.Input, func(t *testing.T) {
+			t.Parallel()
+			data := []byte(`{"@type": "type.googleapis.com/google.protobuf.Value", value: ` + testCase.Input + `}`)
+			any := &anypb.Any{}
+			if err := Unmarshal(data, any); err != nil {
+				t.Fatal(err)
+			}
+			actual := &structpb.Value{}
+			if err := any.UnmarshalTo(actual); err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(testCase.Expected, actual, protocmp.Transform()); diff != "" {
+				t.Errorf("Unexpected diff:\n%s", diff)
+			}
 		})
 	}
 }
