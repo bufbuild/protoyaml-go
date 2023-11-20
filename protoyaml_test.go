@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -249,6 +250,38 @@ func TestInfNanIntegers(t *testing.T) {
 			actual := &proto3.TestAllTypes{}
 			err := Unmarshal(data, actual)
 			require.ErrorContains(t, err, "invalid syntax")
+		})
+	}
+}
+
+func TestAnyValue(t *testing.T) {
+	t.Parallel()
+	for _, testCase := range []string{
+		"{}", "1", "[1, \"hi\"]",
+	} {
+		testCase := testCase
+		t.Run(testCase, func(t *testing.T) {
+			t.Parallel()
+			data := []byte(`{"@type": "type.googleapis.com/google.protobuf.Value", "value": ` + testCase + `}`)
+			yamlAnyVal := &anypb.Any{}
+			if err := Unmarshal(data, yamlAnyVal); err != nil {
+				t.Fatal(err)
+			}
+			jsonAnyVal := &anypb.Any{}
+			if err := protojson.Unmarshal(data, jsonAnyVal); err != nil {
+				t.Fatal(err)
+			}
+			actualYaml := &structpb.Value{}
+			if err := yamlAnyVal.UnmarshalTo(actualYaml); err != nil {
+				t.Fatal(err)
+			}
+			actualJSON := &structpb.Value{}
+			if err := jsonAnyVal.UnmarshalTo(actualJSON); err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(actualJSON, actualYaml, protocmp.Transform()); diff != "" {
+				t.Errorf("Unexpected diff:\n%s", diff)
+			}
 		})
 	}
 }

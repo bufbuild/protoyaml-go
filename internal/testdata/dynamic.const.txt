@@ -153,3 +153,11 @@ internal/testdata/dynamic.const.yaml:83:57 invalid integer: precision loss
 internal/testdata/dynamic.const.yaml:84:81 invalid float: strconv.ParseFloat: parsing "1.7014118346046923e+39": value out of range
   84 |     repeated_float: [1.5, 16777215, 16777216, 16777217, 1.7014118346046923e+38, 1.7014118346046923e+39]
   84 |                                                                                 ^...................... invalid float: strconv.ParseFloat: parsing "1.7014118346046923e+39": value out of range
+
+internal/testdata/dynamic.const.yaml:88:5 unknown field "seconds", expended one of [value @type]
+  88 |     seconds: 1
+  88 |     ^................................... unknown field "seconds", expended one of [value @type]
+
+internal/testdata/dynamic.const.yaml:111:5 missing "value" field
+ 111 |     "@type": type.googleapis.com/google.protobuf.BoolValue
+ 111 |     ^..................................................... missing "value" field

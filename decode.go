@@ -34,6 +34,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const atTypeFieldName = "@type"
+
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
 type Validator interface {
 	// Validate the given message.
@@ -90,7 +92,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		node = node.Content[0]
 	}
 
-	unm.unmarshalMessage(node, message)
+	unm.unmarshalMessage(node, message, false)
 	if unm.validator != nil {
 		err := unm.validator.Validate(message)
 		var verr *protovalidate.ValidationError
@@ -153,7 +155,7 @@ func (u *unmarshaler) findAnyTypeURL(node *yaml.Node) string {
 	for i := 1; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i-1]
 		valueNode := node.Content[i]
-		if keyNode.Value == "@type" && u.checkKind(valueNode, yaml.ScalarNode) {
+		if keyNode.Value == atTypeFieldName && u.checkKind(valueNode, yaml.ScalarNode) {
 			typeURL = valueNode.Value
 			break
 		}
@@ -462,7 +464,7 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 	case field.IsMap():
 		u.unmarshalMap(node, field, message.ProtoReflect().Mutable(field).Map())
 	case field.Kind() == protoreflect.MessageKind:
-		u.unmarshalMessage(node, message.ProtoReflect().Mutable(field).Message().Interface())
+		u.unmarshalMessage(node, message.ProtoReflect().Mutable(field).Message().Interface(), false)
 	default:
 		message.ProtoReflect().Set(field, u.unmarshalScalar(node, field, false))
 	}
@@ -475,7 +477,7 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 		case protoreflect.MessageKind, protoreflect.GroupKind:
 			for _, itemNode := range node.Content {
 				msgVal := list.NewElement()
-				u.unmarshalMessage(itemNode, msgVal.Message().Interface())
+				u.unmarshalMessage(itemNode, msgVal.Message().Interface(), false)
 				list.Append(msgVal)
 			}
 		default:
@@ -498,7 +500,7 @@ func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDesc
 			switch mapValueField.Kind() {
 			case protoreflect.MessageKind, protoreflect.GroupKind:
 				mapValue := mapVal.NewValue()
-				u.unmarshalMessage(valueNode, mapValue.Message().Interface())
+				u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
 				mapVal.Set(mapKey.MapKey(), mapValue)
 			default:
 				mapVal.Set(mapKey.MapKey(), u.unmarshalScalar(valueNode, mapValueField, false))
@@ -511,12 +513,45 @@ func isNull(node *yaml.Node) bool {
 	return node.Tag == "!!null"
 }
 
+// Resolve the node to be used with the custom unmarshaler. Returns nil if the
+// there was an error.
+func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node {
+	if !forAny {
+		return node
+	}
+	if !u.checkKind(node, yaml.MappingNode) {
+		return nil
+	}
+	var valueNode *yaml.Node
+	for i := 1; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i-1]
+		switch keyNode.Value {
+		case "value":
+			valueNode = node.Content[i]
+		case atTypeFieldName:
+			continue // Skip the @type field for Any messages
+		default:
+			u.addErrorf(keyNode, "unknown field %#v, expended one of %v", keyNode.Value, []string{"value", atTypeFieldName})
+			return nil
+		}
+	}
+	if valueNode == nil {
+		u.addErrorf(node, "missing \"value\" field")
+	}
+	return valueNode
+}
+
 // Unmarshal the given yaml node into the given proto.Message.
-func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message) {
+func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool) {
 	// Check for a custom unmarshaler
-	custom, ok := u.custom[message.ProtoReflect().Descriptor().FullName()]
-	if ok && custom(u, node, message) {
-		return // Custom unmarshaler handled the decoding
+
+	if custom, ok := u.custom[message.ProtoReflect().Descriptor().FullName()]; ok {
+		valueNode := u.findNodeForCustom(node, forAny)
+		if valueNode == nil {
+			return // Error already added.
+		} else if custom(u, valueNode, message) {
+			return // Custom unmarshaler handled the decoding.
+		}
 	}
 	if isNull(node) {
 		return // Null is always allowed for messages
@@ -530,7 +565,10 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message) {
 	fields := message.ProtoReflect().Descriptor().Fields()
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
-		if u.checkKind(keyNode, yaml.ScalarNode) && keyNode.Value != "@type" {
+		if u.checkKind(keyNode, yaml.ScalarNode) {
+			if forAny && keyNode.Value == atTypeFieldName {
+				continue // Skip the @type field for Any messages
+			}
 			// Get the field Name, JSONName, or Number
 			if field := findField(keyNode.Value, fields); field != nil {
 				valueNode := node.Content[i+1]
@@ -583,7 +621,7 @@ func unmarshalAnyMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) b
 	}
 
 	protoVal := msgType.New()
-	unm.unmarshalMessage(node, protoVal.Interface())
+	unm.unmarshalMessage(node, protoVal.Interface(), true)
 	if err = anyVal.MarshalFrom(protoVal.Interface()); err != nil {
 		unm.addErrorf(node, "failed to marshal %v: %v", msgType.Descriptor().FullName(), err)
 	}
@@ -723,9 +761,6 @@ func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Mess
 
 // Forwards unmarshaling to the "value" field of the given wrapper message.
 func unmarshalWrapperMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
-	if isNull(node) {
-		return true
-	}
 	valueField := message.ProtoReflect().Descriptor().Fields().ByName("value")
 	if node.Kind == yaml.MappingNode || valueField == nil {
 		return false
