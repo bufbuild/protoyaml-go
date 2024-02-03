@@ -134,3 +134,5 @@ values:
   - single_int32_wrapper:
       "@type": type.googleapis.com/google.protobuf.Int32Value
       value: 1
+  - single_bytes: "nopad+"
+  - single_bytes: "web-safe__"

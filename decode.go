@@ -227,8 +227,16 @@ func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 		return nil
 	}
 
+	enc := base64.StdEncoding
+	if strings.ContainsAny(node.Value, "-_") {
+		enc = base64.URLEncoding
+	}
+	if len(node.Value)%4 != 0 {
+		enc = enc.WithPadding(base64.NoPadding)
+	}
+
 	// base64 decode the value.
-	data, err := base64.StdEncoding.DecodeString(node.Value)
+	data, err := enc.DecodeString(node.Value)
 	if err != nil {
 		u.addErrorf(node, "invalid base64: %v", err)
 	}
