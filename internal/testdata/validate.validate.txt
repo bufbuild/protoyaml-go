@@ -1,35 +1,35 @@
 internal/testdata/validate.validate.yaml:2:18 cases[0].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    2 |   - float_gt_lt: 0
-   2 |                  ^...................... cases[0].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   2 | .................^
 
 internal/testdata/validate.validate.yaml:3:18 cases[1].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    3 |   - float_gt_lt: 10
-   3 |                  ^...................... cases[1].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   3 | .................^
 
 internal/testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    4 |   - float_gt_lt: 10.5
-   4 |                  ^...................... cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   4 | .................^
 
 internal/testdata/validate.validate.yaml:5:18 cases[3].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    5 |   - float_gt_lt: -0.5
-   5 |                  ^...................... cases[3].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   5 | .................^
 
 internal/testdata/validate.validate.yaml:6:16 cases[4].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    6 |   - floatGtLt: 10.5
-   6 |                ^........................ cases[4].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   6 | ...............^
 
 internal/testdata/validate.validate.yaml:7:8 cases[5].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    7 |   - 2: -Infinity
-   7 |        ^................................ cases[5].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+   7 | .......^
 
 internal/testdata/validate.validate.yaml:11:7 cases[6].string_map["c1"]: value does not match regex pattern `^[a-z]+$` (string.pattern)
   11 |       c1: B
-  11 |       ^................................. cases[6].string_map["c1"]: value does not match regex pattern `^[a-z]+$` (string.pattern)
+  11 | ......^
 
 internal/testdata/validate.validate.yaml:12:5 cases[7].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
   12 |   - string_map:
-  12 |     ^................................... cases[7].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+  12 | ....^
 
 internal/testdata/validate.validate.yaml:13:10 cases[7].string_map["b"]: value does not match regex pattern `^[A-Z]+$` (string.pattern)
   13 |       b: B1
-  13 |          ^.............................. cases[7].string_map["b"]: value does not match regex pattern `^[A-Z]+$` (string.pattern)
+  13 | .........^
