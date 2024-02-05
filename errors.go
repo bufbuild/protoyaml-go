@@ -42,16 +42,8 @@ func (n *nodeError) Error() string {
 	if n.line != "" {
 		lineNum := fmt.Sprintf("%4d", n.Node.Line)
 		result.WriteString(fmt.Sprintf("%s | %s\n", lineNum, n.line))
-		tailLen := len(n.line)
-		if tailLen < 40 {
-			tailLen = 40
-		}
-		tailLen -= n.Node.Column
-		if tailLen < 1 {
-			tailLen = 1
-		}
-		marker := strings.Repeat(" ", n.Node.Column-1) + "^" + strings.Repeat(".", tailLen)
-		result.WriteString(fmt.Sprintf("%s | %s %s\n", lineNum, marker, n.Unwrap().Error()))
+		marker := strings.Repeat(".", n.Node.Column-1) + "^"
+		result.WriteString(fmt.Sprintf("%s | %s\n", lineNum, marker))
 	}
 	return result.String()
 }

@@ -66,34 +66,34 @@ The following errors are returned:
 ```
 testdata/basic.proto3test.yaml:5:18: expected bool, got "1"
    5 |   - single_bool: 1
-     |                  ^...................... expected bool, got "1"
+     | .................^
 testdata/basic.proto3test.yaml:6:18: expected bool, got "0"
    6 |   - single_bool: 0
-     |                  ^...................... expected bool, got "0"
+     | .................^
 testdata/basic.proto3test.yaml:7:18: expected tag !!bool, got !!str
    7 |   - single_bool: "true"
-     |                  ^...................... expected tag !!bool, got !!str
+     | .................^
 testdata/basic.proto3test.yaml:8:18: expected tag !!bool, got !!str
    8 |   - single_bool: "false"
-     |                  ^...................... expected tag !!bool, got !!str
+     | .................^
 testdata/basic.proto3test.yaml:9:18: expected bool, got "True"
    9 |   - single_bool: True
-     |                  ^...................... expected bool, got "True"
+     | .................^
 testdata/basic.proto3test.yaml:10:18: expected bool, got "False"
   10 |   - single_bool: False
-     |                  ^...................... expected bool, got "False"
+     | .................^
 testdata/basic.proto3test.yaml:11:18: expected bool, got "TRUE"
   11 |   - single_bool: TRUE
-     |                  ^...................... expected bool, got "TRUE"
+     | .................^
 testdata/basic.proto3test.yaml:12:18: expected bool, got "FALSE"
   12 |   - single_bool: FALSE
-     |                  ^...................... expected bool, got "FALSE"
+     | .................^
 testdata/basic.proto3test.yaml:13:18: expected bool, got "yes"
   13 |   - single_bool: yes
-     |                  ^...................... expected bool, got "yes"
+     | .................^
 testdata/basic.proto3test.yaml:14:18: expected bool, got "no"
   14 |   - single_bool: no
-     |                  ^...................... expected bool, got "no"
+     | .................^
 ```
 
 Only `true` and `false` are valid values for the `single_bool` field.
@@ -138,7 +138,7 @@ The errors produced by the `Validator` will show up along side the ProtoYAML err
 ```
 testdata/validate.validate.yaml:4:18 cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
    4 |   - float_gt_lt: 10.5
-     |                  ^...................... cases[2].float_gt_lt: value must be greater than 0 and less than 10 (float.gt_lt)
+     | .................^
 ```
 
 ## Status: Beta
