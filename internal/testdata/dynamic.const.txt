@@ -66,14 +66,6 @@ internal/testdata/dynamic.const.yaml:55:30 invalid base64: illegal base64 data a
   55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
   55 | .............................^
 
-internal/testdata/dynamic.const.yaml:55:35 invalid base64: illegal base64 data at input byte 0
-  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
-  55 | ..................................^
-
-internal/testdata/dynamic.const.yaml:55:49 invalid base64: illegal base64 data at input byte 0
-  55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
-  55 | ................................................^
-
 internal/testdata/dynamic.const.yaml:55:68 invalid base64: illegal base64 data at input byte 4
   55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
   55 | ...................................................................^
