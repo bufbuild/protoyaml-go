@@ -596,13 +596,15 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 		case yaml.ScalarNode:
 			key = keyNode.Value
 		case yaml.SequenceNode:
+			// Interpret single element sequences as extension field.
 			if len(keyNode.Content) == 1 && keyNode.Content[0].Kind == yaml.ScalarNode {
 				key = "[" + keyNode.Content[0].Value + "]"
 				break
 			}
 			fallthrough
 		default:
-			u.checkKind(keyNode, yaml.ScalarNode) // Always an error.
+			// Report an error for non-scalar keys (or sequences with multiple elements).
+			u.checkKind(keyNode, yaml.ScalarNode) // Always returns false.
 			continue
 		}
 
