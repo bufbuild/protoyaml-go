@@ -113,7 +113,7 @@ func tryParse(filePath string) (string, error) {
 		return "", fmt.Errorf("unknown file type: %s", filePath)
 	}
 	if err != nil {
-		return err.Error(), nil
+		return err.Error(), nil //nolint:nilerr
 	}
 	return "", nil
 }
