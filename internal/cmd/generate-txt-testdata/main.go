@@ -97,6 +97,9 @@ func tryParse(filePath string) (string, error) {
 	}
 
 	switch {
+	case strings.HasSuffix(filePath, ".proto2test.yaml"):
+		testCase := &testv1.Proto2Test{}
+		err = options.Unmarshal(data, testCase)
 	case strings.HasSuffix(filePath, ".proto3test.yaml"):
 		testCase := &testv1.Proto3Test{}
 		err = options.Unmarshal(data, testCase)
@@ -109,5 +112,8 @@ func tryParse(filePath string) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown file type: %s", filePath)
 	}
-	return err.Error(), nil
+	if err != nil {
+		return err.Error(), nil
+	}
+	return "", nil
 }
