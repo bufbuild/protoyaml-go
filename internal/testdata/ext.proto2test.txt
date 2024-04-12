@@ -1,0 +1,7 @@
+internal/testdata/ext.proto2test.yaml:1:1 unknown field "[undefined]", expected one of []
+   1 | '[undefined]': hi
+   1 | ^
+
+internal/testdata/ext.proto2test.yaml:4:1 expected scalar, got sequence
+   4 | [buf.protoyaml.test.v1.p2t_repeated_string_ext, hi]: [hi]
+   4 | ^

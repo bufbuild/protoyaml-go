@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/protovalidate-go"
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -37,7 +38,10 @@ func TestGoldenFiles(t *testing.T) {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(path, ".yaml") {
-			testRunYAMLFile(t, path)
+			t.Run(path, func(t *testing.T) {
+				t.Parallel()
+				testRunYAMLFile(t, path)
+			})
 		}
 		return nil
 	}); err != nil {
@@ -97,6 +101,15 @@ func TestParseDuration(t *testing.T) {
 	}
 }
 
+func TestExtension(t *testing.T) {
+	t.Parallel()
+
+	actual := &testv1.Proto2Test{}
+	err := Unmarshal([]byte(`[buf.protoyaml.test.v1.p2t_string_ext]: hi`), actual)
+	require.NoError(t, err)
+	require.Equal(t, "hi", proto.GetExtension(actual, testv1.E_P2TStringExt))
+}
+
 func testRunYAML(path string, msg proto.Message) error {
 	// Read the test file
 	file, err := os.Open(path)
@@ -125,6 +138,8 @@ func testRunYAMLFile(t *testing.T, testFile string) {
 
 	var err error
 	switch {
+	case strings.HasSuffix(testFile, ".proto2test.yaml"):
+		err = testRunYAML(testFile, &testv1.Proto2Test{})
 	case strings.HasSuffix(testFile, ".proto3test.yaml"):
 		err = testRunYAML(testFile, &testv1.Proto3Test{})
 	case strings.HasSuffix(testFile, ".const.yaml"):

@@ -57,6 +57,11 @@ type UnmarshalOptions struct {
 	}
 }
 
+type protoResolver interface {
+	protoregistry.MessageTypeResolver
+	protoregistry.ExtensionTypeResolver
+}
+
 // Unmarshal a Protobuf message from the given YAML data.
 func Unmarshal(data []byte, message proto.Message) error {
 	return (UnmarshalOptions{}).Unmarshal(data, message)
@@ -100,7 +105,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		case err == nil: // Valid.
 		case errors.As(err, &verr):
 			for _, violation := range verr.Violations {
-				closest := nodeClosestToPath(node, message.ProtoReflect().Descriptor(), violation.GetFieldPath(), violation.GetForKey())
+				closest := unm.nodeClosestToPath(node, message.ProtoReflect().Descriptor(), violation.GetFieldPath(), violation.GetForKey())
 				unm.addError(closest, &violationError{
 					Violation: violation,
 				})
@@ -165,13 +170,7 @@ func (u *unmarshaler) findAnyTypeURL(node *yaml.Node) string {
 
 func (u *unmarshaler) resolveAnyType(typeURL string) (protoreflect.MessageType, error) {
 	// Get the message type.
-	var msgType protoreflect.MessageType
-	var err error
-	if u.options.Resolver != nil {
-		msgType, err = u.options.Resolver.FindMessageByURL(typeURL)
-	} else { // Use the global registry.
-		msgType, err = protoregistry.GlobalTypes.FindMessageByURL(typeURL)
-	}
+	msgType, err := u.getResolver().FindMessageByURL(typeURL)
 	if err != nil {
 		return nil, err
 	}
@@ -446,22 +445,42 @@ func parseIntLiteral(value string) (intLit, error) {
 	return lit, err
 }
 
-// Searches for the field with the given 'key' first by Name, then by JSONName,
+func (u *unmarshaler) getResolver() protoResolver {
+	if u.options.Resolver != nil {
+		return u.options.Resolver
+	}
+	return protoregistry.GlobalTypes
+}
+
+// findField searches for the field with the given 'key' by extension type, JSONName, TextName,
 // and finally by Number.
-func findField(key string, fields protoreflect.FieldDescriptors) protoreflect.FieldDescriptor {
-	if field := fields.ByName(protoreflect.Name(key)); field != nil {
-		return field
+func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescriptor) (protoreflect.FieldDescriptor, error) {
+	fields := msgDesc.Fields()
+	if strings.HasPrefix(key, "[") && strings.HasSuffix(key, "]") {
+		extName := protoreflect.FullName(key[1 : len(key)-1])
+		extType, err := u.getResolver().FindExtensionByName(extName)
+		if err != nil {
+			return nil, err
+		}
+		result := extType.TypeDescriptor()
+		if !msgDesc.ExtensionRanges().Has(result.Number()) || result.ContainingMessage().FullName() != msgDesc.FullName() {
+			return nil, fmt.Errorf("message %v cannot be extended by %v", msgDesc.FullName(), result.FullName())
+		}
+		return result, nil
 	}
 	if field := fields.ByJSONName(key); field != nil {
-		return field
+		return field, nil
+	}
+	if field := fields.ByTextName(key); field != nil {
+		return field, nil
 	}
 	num, err := strconv.ParseInt(key, 10, 32)
 	if err == nil {
 		if field := fields.ByNumber(protoreflect.FieldNumber(num)); field != nil {
-			return field
+			return field, nil
 		}
 	}
-	return nil
+	return nil, protoregistry.NotFound
 }
 
 // Unmarshal a field, handling isList/isMap.
@@ -552,7 +571,6 @@ func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node
 // Unmarshal the given yaml node into the given proto.Message.
 func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool) {
 	// Check for a custom unmarshaler
-
 	if custom, ok := u.custom[message.ProtoReflect().Descriptor().FullName()]; ok {
 		valueNode := u.findNodeForCustom(node, forAny)
 		if valueNode == nil {
@@ -570,20 +588,38 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 		return
 	}
 	// Decode the fields
-	fields := message.ProtoReflect().Descriptor().Fields()
+	msgDesc := message.ProtoReflect().Descriptor()
 	for i := 0; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i]
-		if u.checkKind(keyNode, yaml.ScalarNode) {
-			if forAny && keyNode.Value == atTypeFieldName {
-				continue // Skip the @type field for Any messages
+		var key string
+		switch keyNode.Kind {
+		case yaml.ScalarNode:
+			key = keyNode.Value
+		case yaml.SequenceNode:
+			// Interpret single element sequences as extension field.
+			if len(keyNode.Content) == 1 && keyNode.Content[0].Kind == yaml.ScalarNode {
+				key = "[" + keyNode.Content[0].Value + "]"
+				break
 			}
-			// Get the field Name, JSONName, or Number
-			if field := findField(keyNode.Value, fields); field != nil {
-				valueNode := node.Content[i+1]
-				u.unmarshalField(valueNode, field, message)
-			} else {
-				u.addErrorf(keyNode, "unknown field %#v, expended one of %v", keyNode.Value, getFieldNames(fields))
-			}
+			fallthrough
+		default:
+			// Report an error for non-scalar keys (or sequences with multiple elements).
+			u.checkKind(keyNode, yaml.ScalarNode) // Always returns false.
+			continue
+		}
+
+		if forAny && key == atTypeFieldName {
+			continue // Skip the @type field for Any messages
+		}
+		field, err := u.findField(key, msgDesc)
+		switch {
+		case errors.Is(err, protoregistry.NotFound):
+			u.addErrorf(keyNode, "unknown field %#v, expected one of %v", key, getFieldNames(msgDesc.Fields()))
+		case err != nil:
+			u.addError(keyNode, err)
+		default:
+			valueNode := node.Content[i+1]
+			u.unmarshalField(valueNode, field, message)
 		}
 	}
 }
@@ -1007,12 +1043,12 @@ func (u *unmarshaler) unmarshalScalarFloat(node *yaml.Node, value *structpb.Valu
 //   - 'foo[0]' -> the first element of the repeated field foo or the map entry with key '0'
 //   - 'foo.bar' -> the field bar in the message field foo
 //   - 'foo["bar"]' -> the map entry with key 'bar' in the map field foo
-func nodeClosestToPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, path string, toKey bool) *yaml.Node {
+func (u *unmarshaler) nodeClosestToPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, path string, toKey bool) *yaml.Node {
 	parsedPath, err := parseFieldPath(path)
 	if err != nil {
 		return root
 	}
-	return findNodeByPath(root, msgDesc, parsedPath, toKey)
+	return u.findNodeByPath(root, msgDesc, parsedPath, toKey)
 }
 
 func parseFieldPath(path string) ([]string, error) {
@@ -1076,7 +1112,7 @@ func parseNextValue(path string) (string, string) {
 }
 
 // Returns the node as close to the given path as possible.
-func findNodeByPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, path []string, toKey bool) *yaml.Node {
+func (u *unmarshaler) findNodeByPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, path []string, toKey bool) *yaml.Node {
 	cur := root
 	curMsg := msgDesc
 	var curMap protoreflect.FieldDescriptor
@@ -1084,8 +1120,8 @@ func findNodeByPath(root *yaml.Node, msgDesc protoreflect.MessageDescriptor, pat
 		switch cur.Kind {
 		case yaml.MappingNode:
 			if curMsg != nil {
-				field := findField(key, curMsg.Fields())
-				if field == nil {
+				field, err := u.findField(key, curMsg)
+				if err != nil {
 					return cur
 				}
 				var found bool

@@ -1,0 +1,4 @@
+'[undefined]': hi
+'[buf.protoyaml.test.v1.p2t_string_ext]': hi
+[buf.protoyaml.test.v1.p2t_repeated_string_ext]: [hi]
+[buf.protoyaml.test.v1.p2t_repeated_string_ext, hi]: [hi]
