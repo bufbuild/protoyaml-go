@@ -454,7 +454,7 @@ func (u *unmarshaler) getResolver() protoregistry.MessageTypeResolver {
 	return protoregistry.GlobalTypes
 }
 
-// Searches for the field with the given 'key' first by Name, then by JSONName,
+// findField searches for the field with the given 'key' by extension type, JSONName, TextName,
 // and finally by Number.
 func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescriptor) (protoreflect.FieldDescriptor, error) {
 	fields := msgDesc.Fields()
