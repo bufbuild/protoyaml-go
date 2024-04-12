@@ -1,4 +1,4 @@
-internal/testdata/ext.proto2test.yaml:1:1 unknown field "[undefined]", expended one of []
+internal/testdata/ext.proto2test.yaml:1:1 unknown field "[undefined]", expected one of []
    1 | '[undefined]': hi
    1 | ^
 

@@ -230,6 +230,6 @@ internal/testdata/basic.proto3test.yaml:130:23 expected fields for google.protob
  130 |   - single_timestamp: []
  130 | ......................^
 
-internal/testdata/basic.proto3test.yaml:135:7 unknown field "@type", expended one of [value]
+internal/testdata/basic.proto3test.yaml:135:7 unknown field "@type", expected one of [value]
  135 |       "@type": type.googleapis.com/google.protobuf.Int32Value
  135 | ......^

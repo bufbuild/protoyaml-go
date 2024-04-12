@@ -57,6 +57,11 @@ type UnmarshalOptions struct {
 	}
 }
 
+type protoResolver interface {
+	protoregistry.MessageTypeResolver
+	protoregistry.ExtensionTypeResolver
+}
+
 // Unmarshal a Protobuf message from the given YAML data.
 func Unmarshal(data []byte, message proto.Message) error {
 	return (UnmarshalOptions{}).Unmarshal(data, message)
@@ -440,14 +445,7 @@ func parseIntLiteral(value string) (intLit, error) {
 	return lit, err
 }
 
-func (u *unmarshaler) getExtResolver() protoregistry.ExtensionTypeResolver {
-	if u.options.Resolver != nil {
-		return u.options.Resolver
-	}
-	return protoregistry.GlobalTypes
-}
-
-func (u *unmarshaler) getResolver() protoregistry.MessageTypeResolver {
+func (u *unmarshaler) getResolver() protoResolver {
 	if u.options.Resolver != nil {
 		return u.options.Resolver
 	}
@@ -460,7 +458,7 @@ func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescript
 	fields := msgDesc.Fields()
 	if strings.HasPrefix(key, "[") && strings.HasSuffix(key, "]") {
 		extName := protoreflect.FullName(key[1 : len(key)-1])
-		extType, err := u.getExtResolver().FindExtensionByName(extName)
+		extType, err := u.getResolver().FindExtensionByName(extName)
 		if err != nil {
 			return nil, err
 		}
@@ -604,7 +602,7 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 			}
 			fallthrough
 		default:
-			u.checkKind(keyNode, yaml.ScalarNode)
+			u.checkKind(keyNode, yaml.ScalarNode) // Always an error.
 			continue
 		}
 
@@ -614,7 +612,7 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 		field, err := u.findField(key, msgDesc)
 		switch {
 		case errors.Is(err, protoregistry.NotFound):
-			u.addErrorf(keyNode, "unknown field %#v, expended one of %v", key, getFieldNames(msgDesc.Fields()))
+			u.addErrorf(keyNode, "unknown field %#v, expected one of %v", key, getFieldNames(msgDesc.Fields()))
 		case err != nil:
 			u.addError(keyNode, err)
 		default:
