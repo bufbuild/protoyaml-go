@@ -186,27 +186,27 @@ internal/testdata/basic.proto3test.yaml:105:25 expected fields for bufext.cel.ex
  105 |   - standalone_message: []
  105 | ........................^
 
-internal/testdata/basic.proto3test.yaml:107:22 invalid duration: missing trailing 's'
+internal/testdata/basic.proto3test.yaml:107:22 invalid duration: missing unit, expected one of [h m s ms us ns]
  107 |   - single_duration: 1
  107 | .....................^
 
-internal/testdata/basic.proto3test.yaml:110:22 invalid duration: too many fractional second digits
+internal/testdata/basic.proto3test.yaml:110:22 invalid duration: fractional nanos
  110 |   - single_duration: 1.0123456789s
  110 | .....................^
 
-internal/testdata/basic.proto3test.yaml:111:22 invalid duration: strconv.ParseInt: parsing "A": invalid syntax
+internal/testdata/basic.proto3test.yaml:111:22 invalid duration
  111 |   - single_duration: As
  111 | .....................^
 
-internal/testdata/basic.proto3test.yaml:112:22 invalid duration: strconv.ParseInt: parsing "A": invalid syntax
+internal/testdata/basic.proto3test.yaml:112:22 invalid duration
  112 |   - single_duration: A.1s
  112 | .....................^
 
-internal/testdata/basic.proto3test.yaml:113:22 invalid duration: invalid duration: too many '.' characters
+internal/testdata/basic.proto3test.yaml:113:22 invalid duration: missing unit, expected one of [h m s ms us ns]
  113 |   - single_duration: 1.1.1s
  113 | .....................^
 
-internal/testdata/basic.proto3test.yaml:114:22 invalid duration: strconv.ParseInt: parsing "B": invalid syntax
+internal/testdata/basic.proto3test.yaml:114:22 invalid duration: unknown unit, expected one of [h m s ms us ns]
  114 |   - single_duration: 1.Bs
  114 | .....................^
 

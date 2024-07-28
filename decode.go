@@ -731,54 +731,6 @@ const (
 	minTimestampSeconds = -62135596800
 )
 
-// Format is decimal seconds with up to 9 fractional digits, followed by an 's'.
-func parseDuration(txt string, duration *durationpb.Duration) error {
-	// Remove trailing s.
-	txt = strings.TrimSpace(txt)
-	if len(txt) == 0 || txt[len(txt)-1] != 's' {
-		return errors.New("missing trailing 's'")
-	}
-	value := txt[:len(txt)-1]
-	isNeg := strings.HasPrefix(value, "-")
-
-	// Split into seconds and nanos.
-	parts := strings.Split(value, ".")
-	switch len(parts) {
-	case 1:
-		// seconds only
-		seconds, err := strconv.ParseInt(parts[0], 10, 64)
-		if err != nil {
-			return err
-		}
-		duration.Seconds = seconds
-		duration.Nanos = 0
-	case 2:
-		// seconds and up to 9 digits of fractional seconds
-		seconds, err := strconv.ParseInt(parts[0], 10, 64)
-		if err != nil {
-			return err
-		}
-		duration.Seconds = seconds
-		nanos, err := strconv.ParseInt(parts[1], 10, 64)
-		if err != nil {
-			return err
-		}
-		power := 9 - len(parts[1])
-		if power < 0 {
-			return errors.New("too many fractional second digits")
-		}
-		nanos *= int64(math.Pow10(power))
-		if isNeg {
-			duration.Nanos = -int32(nanos)
-		} else {
-			duration.Nanos = int32(nanos)
-		}
-	default:
-		return errors.New("invalid duration: too many '.' characters")
-	}
-	return nil
-}
-
 // Format is RFC3339Nano, limited to the range 0001-01-01T00:00:00Z to
 // 9999-12-31T23:59:59Z inclusive.
 func parseTimestamp(txt string, timestamp *timestamppb.Timestamp) error {
@@ -818,19 +770,22 @@ func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Messa
 	if node.Kind != yaml.ScalarNode || len(node.Value) == 0 || isNull(node) {
 		return false
 	}
-	duration, ok := message.(*durationpb.Duration)
-	if !ok {
-		duration = &durationpb.Duration{}
-	}
-	err := parseDuration(node.Value, duration)
+	duration, err := ParseDuration(node.Value)
 	if err != nil {
-		unm.addErrorf(node, "invalid duration: %v", err)
-	} else if !ok {
-		// Set the fields dynamically.
-		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.GetSeconds())) &&
-			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.GetNanos()))
+		unm.addError(node, err)
+		return true
 	}
-	return true
+
+	if value, ok := message.(*durationpb.Duration); ok {
+		value.Seconds = duration.Seconds
+		value.Nanos = duration.Nanos
+		return true
+	}
+
+	// Set the fields dynamically.
+	return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.GetSeconds())) &&
+		setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.GetNanos()))
+
 }
 
 func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
@@ -1272,7 +1227,7 @@ func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
 
 	end := unitEnd(str)
 	if end == 0 {
-		return "", errors.New("invalid duration: missing unit")
+		return "", fmt.Errorf("invalid duration: missing unit, expected one of %v", unitsNames)
 	}
 	unitName := str[:end]
 	str = str[end:]
