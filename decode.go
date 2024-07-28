@@ -70,9 +70,14 @@ func (o UnmarshalOptions) Unmarshal(data []byte, message proto.Message) error {
 	return o.unmarshalNode(&yamlFile, message, data)
 }
 
-// ParseDuration parses a duration string into a durationpb.Duration without losing precision.
+// ParseDuration parses a duration string into a durationpb.Duration.
+//
 // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+//
+// This function supports the full range of durationpb.Duration values, including
+// those outside the range of time.Duration.
 func ParseDuration(str string) (*durationpb.Duration, error) {
+
 	// [-+]?([0-9]*(\.[0-9]*)?[a-z]+)+
 	neg := false
 
