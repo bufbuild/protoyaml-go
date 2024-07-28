@@ -224,7 +224,7 @@ func TestToDuration(t *testing.T) {
 		{Literal: "1h1m1s1ms1us1μs1µs1ns", Expected: &durationpb.Duration{Seconds: 3661, Nanos: 1003001}},
 	} {
 		testCase := testCase
-		t.Run("", func(t *testing.T) {
+		t.Run(testCase.Literal, func(t *testing.T) {
 			t.Parallel()
 			actual, err := ParseDuration(testCase.Literal)
 			if testCase.ErrMsg != "" {

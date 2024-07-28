@@ -1336,10 +1336,11 @@ func leadingInt(str string) (result uint64, rem string, pre bool, err error) {
 		if c < '0' || c > '9' {
 			break
 		}
-		if result >= (1<<64)/10 {
-			return 0, str, false, fmt.Errorf("invalid duration: integer overflow")
+		newResult := result*10 + uint64(c-'0')
+		if newResult < result {
+			return 0, str, i > 0, errors.New("integer overflow")
 		}
-		result = result*10 + uint64(c-'0')
+		result = newResult
 	}
 	return result, str[i:], i > 0, nil
 }
