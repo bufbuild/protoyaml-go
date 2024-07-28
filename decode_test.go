@@ -64,6 +64,7 @@ func TestParseDuration(t *testing.T) {
 		{Input: ".s", Expected: nil, ErrMsg: "invalid duration"},
 		{Input: "-.", Expected: nil, ErrMsg: "invalid duration"},
 		{Input: "-.s", Expected: nil, ErrMsg: "invalid duration"},
+		{Input: "--0s", Expected: nil, ErrMsg: "invalid duration"},
 		{Input: "0y", Expected: nil, ErrMsg: "unknown unit"},
 		{Input: "0so", Expected: nil, ErrMsg: "unknown unit"},
 		{Input: "0os", Expected: nil, ErrMsg: "unknown unit"},

@@ -777,15 +777,14 @@ func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Messa
 	}
 
 	if value, ok := message.(*durationpb.Duration); ok {
-		value.Seconds = duration.Seconds
-		value.Nanos = duration.Nanos
+		value.Seconds = duration.GetSeconds()
+		value.Nanos = duration.GetNanos()
 		return true
 	}
 
 	// Set the fields dynamically.
 	return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(duration.GetSeconds())) &&
 		setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.GetNanos()))
-
 }
 
 func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
