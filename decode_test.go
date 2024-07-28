@@ -24,11 +24,11 @@ import (
 	"github.com/bufbuild/protovalidate-go"
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"gotest.tools/v3/assert"
 )
 
 func TestGoldenFiles(t *testing.T) {
