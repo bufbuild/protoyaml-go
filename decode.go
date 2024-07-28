@@ -1187,20 +1187,25 @@ func findEntryByKey(cur *yaml.Node, key string) (*yaml.Node, *yaml.Node, bool) {
 	return nil, cur, false
 }
 
-var nanosPerSecond = new(big.Int).SetUint64(uint64(time.Second))
+// nanosPerSecond is the number of nanoseconds in a second.
+var nanosPerSecond = new(big.Int).SetUint64(uint64(time.Second / time.Nanosecond))
+
+// nanosMap is a map of time unit names to their duration in nanoseconds.
 var nanosMap = map[string]*big.Int{
-	"ns": new(big.Int).SetUint64(uint64(time.Nanosecond)),
-	"us": new(big.Int).SetUint64(uint64(time.Microsecond)),
-	"µs": new(big.Int).SetUint64(uint64(time.Microsecond)), // U+00B5 = micro symbol
-	"μs": new(big.Int).SetUint64(uint64(time.Microsecond)), // U+03BC = Greek letter mu
-	"ms": new(big.Int).SetUint64(uint64(time.Millisecond)),
-	"s":  new(big.Int).SetUint64(uint64(time.Second)),
-	"m":  new(big.Int).SetUint64(uint64(time.Minute)),
-	"h":  new(big.Int).SetUint64(uint64(time.Hour)),
+	"ns": new(big.Int).SetUint64(1), // Identity for nanos.
+	"us": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)),
+	"µs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+00B5 = micro symbol
+	"μs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+03BC = Greek letter mu
+	"ms": new(big.Int).SetUint64(uint64(time.Millisecond / time.Nanosecond)),
+	"s":  nanosPerSecond,
+	"m":  new(big.Int).SetUint64(uint64(time.Minute / time.Nanosecond)),
+	"h":  new(big.Int).SetUint64(uint64(time.Hour / time.Nanosecond)),
 }
 
+// unitsNames is the (normalized) list of time unit names.
 var unitsNames = []string{"h", "m", "s", "ms", "us", "ns"}
 
+// parseDurationNest parses a single segment of the duration string.
 func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
 	// The next character must be [0-9.]
 	if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
