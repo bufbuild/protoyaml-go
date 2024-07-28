@@ -1187,17 +1187,16 @@ func findEntryByKey(cur *yaml.Node, key string) (*yaml.Node, *yaml.Node, bool) {
 	return nil, cur, false
 }
 
-var nanosPerSecond = new(big.Int).SetUint64(uint64(time.Second / time.Nanosecond))
-
+var nanosPerSecond = new(big.Int).SetUint64(uint64(time.Second))
 var nanosMap = map[string]*big.Int{
-	"ns": new(big.Int).SetUint64(1),
-	"us": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)),
-	"µs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+00B5 = micro symbol
-	"μs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+03BC = Greek letter mu
-	"ms": new(big.Int).SetUint64(uint64(time.Millisecond / time.Nanosecond)),
-	"s":  new(big.Int).SetUint64(uint64(time.Second / time.Nanosecond)),
-	"m":  new(big.Int).SetUint64(uint64(time.Minute / time.Nanosecond)),
-	"h":  new(big.Int).SetUint64(uint64(time.Hour / time.Nanosecond)),
+	"ns": new(big.Int).SetUint64(uint64(time.Nanosecond)),
+	"us": new(big.Int).SetUint64(uint64(time.Microsecond)),
+	"µs": new(big.Int).SetUint64(uint64(time.Microsecond)), // U+00B5 = micro symbol
+	"μs": new(big.Int).SetUint64(uint64(time.Microsecond)), // U+03BC = Greek letter mu
+	"ms": new(big.Int).SetUint64(uint64(time.Millisecond)),
+	"s":  new(big.Int).SetUint64(uint64(time.Second)),
+	"m":  new(big.Int).SetUint64(uint64(time.Minute)),
+	"h":  new(big.Int).SetUint64(uint64(time.Hour)),
 }
 
 var unitsNames = []string{"h", "m", "s", "ms", "us", "ns"}
