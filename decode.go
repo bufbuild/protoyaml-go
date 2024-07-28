@@ -77,7 +77,6 @@ func (o UnmarshalOptions) Unmarshal(data []byte, message proto.Message) error {
 // This function supports the full range of durationpb.Duration values, including
 // those outside the range of time.Duration.
 func ParseDuration(str string) (*durationpb.Duration, error) {
-
 	// [-+]?([0-9]*(\.[0-9]*)?[a-z]+)+
 	neg := false
 
@@ -98,63 +97,11 @@ func ParseDuration(str string) (*durationpb.Duration, error) {
 		return nil, errors.New("invalid duration")
 	}
 	totalNanos := &big.Int{}
+	var err error
 	for str != "" {
-		// The next character must be [0-9.]
-		if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
-			return nil, errors.New("invalid duration")
-		}
-		var err error
-		var whole, frac uint64
-		var pre bool // Whether we have seen a digit before the dot.
-		whole, str, pre, err = leadingInt(str)
+		str, err = parseDurationNext(str, totalNanos)
 		if err != nil {
 			return nil, err
-		}
-		var scale *big.Int
-		var post bool // Whether we have seen a digit after the dot.
-		if str != "" && str[0] == '.' {
-			str = str[1:]
-			frac, scale, str, post = leadingFrac(str)
-		}
-		if !pre && !post {
-			return nil, errors.New("invalid duration")
-		}
-
-		var end int
-		for ; end < len(str); end++ {
-			c := str[end]
-			if c == '.' || '0' <= c && c <= '9' || c == '-' {
-				break
-			}
-		}
-		if end == 0 {
-			return nil, errors.New("invalid duration: missing unit")
-		}
-		unitName := str[:end]
-		str = str[end:]
-		nanosPerUnit, ok := nanosMap[unitName]
-		if !ok {
-			return nil, fmt.Errorf("invalid duration: unknown unit, expected one of %v", unitsNames)
-		}
-
-		// Convert to nanos and add to total.
-		// totalNanos += whole * nanosPerUnit + frac * nanosPerUnit / scale
-		if whole > 0 {
-			wholeNanos := &big.Int{}
-			wholeNanos.SetUint64(whole)
-			wholeNanos.Mul(wholeNanos, nanosPerUnit)
-			totalNanos.Add(totalNanos, wholeNanos)
-		}
-		if frac > 0 {
-			fracNanos := &big.Int{}
-			fracNanos.SetUint64(frac)
-			fracNanos.Mul(fracNanos, nanosPerUnit)
-			rem := &big.Int{}
-			fracNanos.QuoRem(fracNanos, scale, rem)
-			if rem.Uint64() > 0 {
-				return nil, errors.New("invalid duration: fractional nanos")
-			}
-			totalNanos.Add(totalNanos, fracNanos)
 		}
 	}
 	if neg {
@@ -1301,14 +1248,80 @@ var nanosMap = map[string]*big.Int{
 
 var unitsNames = []string{"h", "m", "s", "ms", "us", "ns"}
 
+func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
+	// The next character must be [0-9.]
+	if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
+		return "", errors.New("invalid duration")
+	}
+	var err error
+	var whole, frac uint64
+	var pre bool // Whether we have seen a digit before the dot.
+	whole, str, pre, err = leadingInt(str)
+	if err != nil {
+		return "", err
+	}
+	var scale *big.Int
+	var post bool // Whether we have seen a digit after the dot.
+	if str != "" && str[0] == '.' {
+		str = str[1:]
+		frac, scale, str, post = leadingFrac(str)
+	}
+	if !pre && !post {
+		return "", errors.New("invalid duration")
+	}
+
+	end := unitEnd(str)
+	if end == 0 {
+		return "", errors.New("invalid duration: missing unit")
+	}
+	unitName := str[:end]
+	str = str[end:]
+	nanosPerUnit, ok := nanosMap[unitName]
+	if !ok {
+		return "", fmt.Errorf("invalid duration: unknown unit, expected one of %v", unitsNames)
+	}
+
+	// Convert to nanos and add to total.
+	// totalNanos += whole * nanosPerUnit + frac * nanosPerUnit / scale
+	if whole > 0 {
+		wholeNanos := &big.Int{}
+		wholeNanos.SetUint64(whole)
+		wholeNanos.Mul(wholeNanos, nanosPerUnit)
+		totalNanos.Add(totalNanos, wholeNanos)
+	}
+	if frac > 0 {
+		fracNanos := &big.Int{}
+		fracNanos.SetUint64(frac)
+		fracNanos.Mul(fracNanos, nanosPerUnit)
+		rem := &big.Int{}
+		fracNanos.QuoRem(fracNanos, scale, rem)
+		if rem.Uint64() > 0 {
+			return "", errors.New("invalid duration: fractional nanos")
+		}
+		totalNanos.Add(totalNanos, fracNanos)
+	}
+	return str, nil
+}
+
+func unitEnd(str string) int {
+	var i int
+	for ; i < len(str); i++ {
+		c := str[i]
+		if c == '.' || c == '-' || '0' <= c && c <= '9' {
+			return i
+		}
+	}
+	return i
+}
+
 func leadingFrac(str string) (result uint64, scale *big.Int, rem string, post bool) {
 	var i int
 	scale = big.NewInt(1)
 	big10 := big.NewInt(10)
 	var overflow bool
 	for ; i < len(str); i++ {
-		c := str[i]
-		if c < '0' || c > '9' {
+		chr := str[i]
+		if chr < '0' || chr > '9' {
 			break
 		}
 		if overflow {
@@ -1318,7 +1331,7 @@ func leadingFrac(str string) (result uint64, scale *big.Int, rem string, post bo
 			overflow = true
 			continue
 		}
-		temp := result*10 + uint64(c-'0')
+		temp := result*10 + uint64(chr-'0')
 		if temp > 1<<63 {
 			overflow = true
 			continue
