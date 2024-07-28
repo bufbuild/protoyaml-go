@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"gotest.tools/v3/assert"
 )
 
 func TestGoldenFiles(t *testing.T) {
@@ -170,5 +171,69 @@ func testRunYAMLFile(t *testing.T, testFile string) {
 	if expectedText != errorText {
 		diff := cmp.Diff(expectedText, errorText)
 		t.Errorf("%s: Test %s failed:\nExpected:\n%s\nActual:\n%s\nDiff:\n%s", expectedFileName, testFile, expectedText, errorText, diff)
+	}
+}
+
+func TestToDuration(t *testing.T) {
+	t.Parallel()
+	for _, testCase := range []struct {
+		Literal  string
+		Expected *durationpb.Duration
+		ErrMsg   string
+	}{
+		{Literal: "", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "-", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "s", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: ".", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "-s", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: ".s", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "-.", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "-.s", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "0y", Expected: nil, ErrMsg: "unknown unit"},
+		{Literal: "0so", Expected: nil, ErrMsg: "unknown unit"},
+		{Literal: "0os", Expected: nil, ErrMsg: "unknown unit"},
+		{Literal: "0s-0ms", Expected: nil, ErrMsg: "invalid duration"},
+		{Literal: "0.5ns", Expected: nil, ErrMsg: "fractional nanos"},
+		{Literal: "0.0005us", Expected: nil, ErrMsg: "fractional nanos"},
+		{Literal: "0.0000005μs", Expected: nil, ErrMsg: "fractional nanos"},
+		{Literal: "0.0000000005ms", Expected: nil, ErrMsg: "fractional nanos"},
+		{Literal: "9223372036854775807s", Expected: &durationpb.Duration{Seconds: 9223372036854775807}},
+		{Literal: "9223372036854775808s", ErrMsg: "out of range"},
+		{Literal: "-9223372036854775808s", Expected: &durationpb.Duration{Seconds: -9223372036854775808}},
+		{Literal: "-9223372036854775809s", ErrMsg: "out of range"},
+		{Literal: "18446744073709551615s", ErrMsg: "out of range"},
+		{Literal: "18446744073709551616s", ErrMsg: "overflow"},
+		{Literal: "0"},
+		{Literal: "0s"},
+		{Literal: "-0s"},
+		{Literal: "1s", Expected: &durationpb.Duration{Seconds: 1}},
+		{Literal: "-1s", Expected: &durationpb.Duration{Seconds: -1}},
+		{Literal: "1.5s", Expected: &durationpb.Duration{Seconds: 1, Nanos: 500000000}},
+		{Literal: "-1.5s", Expected: &durationpb.Duration{Seconds: -1, Nanos: -500000000}},
+		{Literal: "1.000000001s", Expected: &durationpb.Duration{Seconds: 1, Nanos: 1}},
+		{Literal: "1.0000000001s", ErrMsg: "fractional nanos"},
+		{Literal: "1.000000000s", Expected: &durationpb.Duration{Seconds: 1}},
+		{Literal: "1.0000000010s", Expected: &durationpb.Duration{Seconds: 1, Nanos: 1}},
+		{Literal: "1h", Expected: &durationpb.Duration{Seconds: 3600}},
+		{Literal: "1m", Expected: &durationpb.Duration{Seconds: 60}},
+		{Literal: "1h1m", Expected: &durationpb.Duration{Seconds: 3660}},
+		{Literal: "1h1m1s", Expected: &durationpb.Duration{Seconds: 3661}},
+		{Literal: "1h1m1.5s", Expected: &durationpb.Duration{Seconds: 3661, Nanos: 500000000}},
+		{Literal: "1.5h1m1.5s", Expected: &durationpb.Duration{Seconds: 5461, Nanos: 500000000}},
+		{Literal: "1.5h1m1.5s1.5h1m1.5s", Expected: &durationpb.Duration{Seconds: 10923}},
+		{Literal: "1h1m1s1ms1us1μs1µs1ns", Expected: &durationpb.Duration{Seconds: 3661, Nanos: 1003001}},
+	} {
+		testCase := testCase
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			actual, err := ParseDuration(testCase.Literal)
+			if testCase.ErrMsg != "" {
+				require.ErrorContains(t, err, testCase.ErrMsg)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, testCase.Expected.GetSeconds(), actual.GetSeconds())
+			assert.Equal(t, testCase.Expected.GetNanos(), actual.GetNanos())
+		})
 	}
 }

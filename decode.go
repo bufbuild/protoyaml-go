@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -33,8 +34,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"
 )
-
-const atTypeFieldName = "@type"
 
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
 type Validator interface {
@@ -57,11 +56,6 @@ type UnmarshalOptions struct {
 	}
 }
 
-type protoResolver interface {
-	protoregistry.MessageTypeResolver
-	protoregistry.ExtensionTypeResolver
-}
-
 // Unmarshal a Protobuf message from the given YAML data.
 func Unmarshal(data []byte, message proto.Message) error {
 	return (UnmarshalOptions{}).Unmarshal(data, message)
@@ -74,6 +68,101 @@ func (o UnmarshalOptions) Unmarshal(data []byte, message proto.Message) error {
 		return err
 	}
 	return o.unmarshalNode(&yamlFile, message, data)
+}
+
+// ParseDuration parses a duration string into a durationpb.Duration without losing precision.
+// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+func ParseDuration(str string) (*durationpb.Duration, error) {
+	// [-+]?([0-9]*(\.[0-9]*)?[a-z]+)+
+	neg := false
+
+	// Consume [-+]?
+	if str != "" {
+		c := str[0]
+		if c == '-' || c == '+' {
+			neg = c == '-'
+			str = str[1:]
+		}
+	}
+	// Special case: if all that is left is "0", this is zero.
+	if str == "0" {
+		var empty *durationpb.Duration
+		return empty, nil
+	}
+	if str == "" {
+		return nil, errors.New("invalid duration")
+	}
+	totalNanos := &big.Int{}
+	for str != "" {
+		// The next character must be [0-9.]
+		if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
+			return nil, errors.New("invalid duration")
+		}
+		var err error
+		var whole, frac uint64
+		var pre bool // Whether we have seen a digit before the dot.
+		whole, str, pre, err = leadingInt(str)
+		if err != nil {
+			return nil, err
+		}
+		var scale *big.Int
+		var post bool // Whether we have seen a digit after the dot.
+		if str != "" && str[0] == '.' {
+			str = str[1:]
+			frac, scale, str, post = leadingFrac(str)
+		}
+		if !pre && !post {
+			return nil, errors.New("invalid duration")
+		}
+
+		var end int
+		for ; end < len(str); end++ {
+			c := str[end]
+			if c == '.' || '0' <= c && c <= '9' || c == '-' {
+				break
+			}
+		}
+		if end == 0 {
+			return nil, errors.New("invalid duration: missing unit")
+		}
+		unitName := str[:end]
+		str = str[end:]
+		nanosPerUnit, ok := nanosMap[unitName]
+		if !ok {
+			return nil, fmt.Errorf("invalid duration: unknown unit, expected one of %v", unitsNames)
+		}
+
+		// Convert to nanos and add to total.
+		// totalNanos += whole * nanosPerUnit + frac * nanosPerUnit / scale
+		if whole > 0 {
+			wholeNanos := &big.Int{}
+			wholeNanos.SetUint64(whole)
+			wholeNanos.Mul(wholeNanos, nanosPerUnit)
+			totalNanos.Add(totalNanos, wholeNanos)
+		}
+		if frac > 0 {
+			fracNanos := &big.Int{}
+			fracNanos.SetUint64(frac)
+			fracNanos.Mul(fracNanos, nanosPerUnit)
+			rem := &big.Int{}
+			fracNanos.QuoRem(fracNanos, scale, rem)
+			if rem.Uint64() > 0 {
+				return nil, errors.New("invalid duration: fractional nanos")
+			}
+			totalNanos.Add(totalNanos, fracNanos)
+		}
+	}
+	if neg {
+		totalNanos.Neg(totalNanos)
+	}
+	result := &durationpb.Duration{}
+	quo, rem := totalNanos.QuoRem(totalNanos, nanosPerSecond, &big.Int{})
+	if !quo.IsInt64() {
+		return nil, errors.New("invalid duration: out of range")
+	}
+	result.Seconds = quo.Int64()
+	result.Nanos = int32(rem.Int64())
+	return result, nil
 }
 
 func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, data []byte) error {
@@ -119,6 +208,13 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		return unmarshalErrors(unm.errors)
 	}
 	return nil
+}
+
+const atTypeFieldName = "@type"
+
+type protoResolver interface {
+	protoregistry.MessageTypeResolver
+	protoregistry.ExtensionTypeResolver
 }
 
 type unmarshaler struct {
@@ -1183,4 +1279,62 @@ func findEntryByKey(cur *yaml.Node, key string) (*yaml.Node, *yaml.Node, bool) {
 		}
 	}
 	return nil, cur, false
+}
+
+var nanosPerSecond = new(big.Int).SetUint64(uint64(time.Second / time.Nanosecond))
+
+var nanosMap = map[string]*big.Int{
+	"ns": new(big.Int).SetUint64(1),
+	"us": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)),
+	"µs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+00B5 = micro symbol
+	"μs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+03BC = Greek letter mu
+	"ms": new(big.Int).SetUint64(uint64(time.Millisecond / time.Nanosecond)),
+	"s":  new(big.Int).SetUint64(uint64(time.Second / time.Nanosecond)),
+	"m":  new(big.Int).SetUint64(uint64(time.Minute / time.Nanosecond)),
+	"h":  new(big.Int).SetUint64(uint64(time.Hour / time.Nanosecond)),
+}
+
+var unitsNames = []string{"h", "m", "s", "ms", "us", "ns"}
+
+func leadingFrac(str string) (result uint64, scale *big.Int, rem string, post bool) {
+	var i int
+	scale = big.NewInt(1)
+	big10 := big.NewInt(10)
+	var overflow bool
+	for ; i < len(str); i++ {
+		c := str[i]
+		if c < '0' || c > '9' {
+			break
+		}
+		if overflow {
+			continue
+		}
+		if result > (1<<63-1)/10 {
+			overflow = true
+			continue
+		}
+		temp := result*10 + uint64(c-'0')
+		if temp > 1<<63 {
+			overflow = true
+			continue
+		}
+		result = temp
+		scale.Mul(scale, big10)
+	}
+	return result, scale, str[i:], i > 0
+}
+
+func leadingInt(str string) (result uint64, rem string, pre bool, err error) {
+	var i int
+	for ; i < len(str); i++ {
+		c := str[i]
+		if c < '0' || c > '9' {
+			break
+		}
+		if result >= (1<<64)/10 {
+			return 0, str, false, fmt.Errorf("invalid duration: integer overflow")
+		}
+		result = result*10 + uint64(c-'0')
+	}
+	return result, str[i:], i > 0, nil
 }
