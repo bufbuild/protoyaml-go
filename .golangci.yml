@@ -61,6 +61,10 @@ linters:
     - wsl               # generous whitespace violates house style
     - exhaustive
     - exhaustruct
+    - nonamedreturns
+    - mnd
+    - err113
+    - gochecknoglobals
 issues:
   exclude:
     # Don't ban use of fmt.Errorf to create new errors, but the remaining

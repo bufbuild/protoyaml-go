@@ -26,13 +26,13 @@ message ValidateTest {
 message ValidateTestCase {
   google.protobuf.Any dynamic = 1;
   float float_gt_lt = 2 [(buf.validate.field).float = {
-    gt: 0,
+    gt: 0
     lt: 10
   }];
   map<string, string> string_map = 3 [(buf.validate.field).map = {
     keys: {
       string: {pattern: "^[a-z]+$"}
-    },
+    }
     values: {
       string: {pattern: "^[A-Z]+$"}
     }
