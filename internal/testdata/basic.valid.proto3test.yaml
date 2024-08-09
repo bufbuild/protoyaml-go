@@ -1,0 +1,83 @@
+# Constant values to test.
+values:
+  # Encode reorders to match the field order in the proto.
+  - single_bool: true
+    single_int32: 1
+    single_int64: 1
+    single_sint32: 1
+    single_sint64: 1
+    single_sfixed32: 1
+  - single_bool: false
+  - 13: true # single_bool has a field number of 13
+  - singleBool: false # The 'json name' of single_bool is singleBool
+  - single_int32: 0
+  - single_sfixed32: 1
+  - single_sint32: 1.0
+  - single_int32: -1
+  - single_int32: 2147483647
+  - single_int32: -2147483648
+  - single_int32: 0x7fffffff
+  - single_int32: -0X80000000
+  - single_int32: 0o17777777777
+  - single_int32: -0O20000000000
+  - single_int32: 0b1111111111111111111111111111111
+  - single_int32: -0B10000000000000000000000000000000
+  - single_int32: 1.0
+  - single_int64: 0
+  - single_sint64: 1
+  - single_sfixed64: 1.0
+  - single_int64: 9223372036854775807
+  - single_int64: -9223372036854775808
+  - single_int64: 9007199254740991.0
+  - single_uint64: 0
+  - single_fixed32: 1.0
+  - single_fixed64: 1.0
+  - single_uint32: 4294967295
+  - single_uint64: 18446744073709551615
+  - single_float: 1.0
+  - single_float: 1
+  - single_float: 1.0e1
+  # Maximum representable value in single precision is 2^128 - 2^104
+  - single_float: 1.7014118346046923e+38
+  - single_float: INF
+  - single_float: inf
+  - single_double: -inf
+  - single_double: nan
+  - single_double: Infinity
+  - single_string: 1
+  - single_string: 1.0
+  - single_string: true
+  - single_string: false
+  - single_string: null
+  - single_string: "null"
+  - single_string: "1"
+  - single_string: "\U0001F600"
+  - single_bytes: good
+  - single_bytes: GOOD
+  - single_bytes: "Zg=="
+  - standalone_enum: -1
+  - standalone_enum: 0
+  - standalone_enum: 1
+  - standalone_enum: 100
+  - standalone_enum: FOO
+  - repeated_int32: [1]
+  - repeated_int32: [1, "1"]
+  - standalone_message: {}
+  - single_duration: 1s
+  - single_duration: 1.123456789s
+  - single_duration:
+      seconds: 1
+      nanos: 2
+  - single_timestamp: 0001-01-01T00:00:00Z
+  - single_timestamp: 9999-12-31T23:59:59.999999999Z
+  - single_timestamp: 1970-01-01T00:00:00Z
+  - single_timestamp: 1970-01-01T00:00:00.000000000Z
+  - single_timestamp: 1970-01-01T00:00:00.000000001Z
+  - single_timestamp:
+      seconds: 1
+      nanos: 2
+  - single_int32_wrapper: 1
+  - single_int32_wrapper:
+      value: 1
+  - single_bytes: "nopad+"
+  - single_bytes: "web-safe__"

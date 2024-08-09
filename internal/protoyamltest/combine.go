@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+// InterestingTestValues returns a list of interesting values for testing.
+//
+// For example extrema, zero values, and other values that exercise edge cases.
 func InterestingTestValues() []*proto3.TestAllTypes {
 	var interestingValues []*proto3.TestAllTypes
 	for _, value := range []bool{true, false} {
@@ -63,7 +66,7 @@ func InterestingTestValues() []*proto3.TestAllTypes {
 		)
 	}
 	fields := (&proto3.TestAllTypes{}).ProtoReflect().Descriptor().Fields()
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		interestingValues = append(interestingValues,
 			interestingFieldValues(fields.Get(i))...)
 	}
@@ -75,7 +78,7 @@ func interestingMessageFieldValues(field protoreflect.FieldDescriptor) []*proto3
 	switch {
 	case field.IsList():
 		listVal := &proto3.TestAllTypes{}
-		for j := 0; j < 3; j++ {
+		for j := range 3 {
 			newVal := listVal.ProtoReflect().Get(field).List().NewElement()
 			PopulateMessage(newVal.Message().Interface(), int64(j))
 			listVal.ProtoReflect().Mutable(field).List().Append(newVal)
@@ -291,7 +294,7 @@ func interestingFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAl
 func interestingEnumValues(enum protoreflect.EnumDescriptor) []protoreflect.EnumNumber {
 	values := enum.Values()
 	result := []protoreflect.EnumNumber{}
-	for i := 0; i < values.Len(); i++ {
+	for i := range values.Len() {
 		result = append(result, values.Get(i).Number())
 	}
 	if enum.FullName() != "google.protobuf.NullValue" {
