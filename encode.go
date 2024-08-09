@@ -16,7 +16,6 @@ package protoyaml
 
 import (
 	"bytes"
-	"encoding/json"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -67,16 +66,31 @@ func (o MarshalOptions) Marshal(message proto.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var jsonVal interface{}
-	if err := json.Unmarshal(data, &jsonVal); err != nil {
+	// Use a json.Node to preserve the order of fields.
+	jsonNode := &yaml.Node{}
+	if err := yaml.Unmarshal(data, jsonNode); err != nil {
 		return nil, err
 	}
+
+	// Clear the style of all nodes to avoid emitting style information in the output.
+	clearStyle(jsonNode)
+	if jsonNode.Kind == yaml.DocumentNode {
+		jsonNode = jsonNode.Content[0]
+	}
+
 	// Write the JSON back out as YAML
 	buffer := &bytes.Buffer{}
 	encoder := yaml.NewEncoder(buffer)
 	encoder.SetIndent(o.Indent)
-	if err := encoder.Encode(jsonVal); err != nil {
+	if err := encoder.Encode(jsonNode); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+func clearStyle(node *yaml.Node) {
+	node.Style = 0
+	for _, child := range node.Content {
+		clearStyle(child)
+	}
 }
