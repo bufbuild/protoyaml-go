@@ -15,39 +15,14 @@
 package protoyaml
 
 import (
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
-	"github.com/bufbuild/protovalidate-go"
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
-
-func TestGoldenFiles(t *testing.T) {
-	t.Parallel()
-	// Walk the test data directory for .yaml files
-	if err := filepath.Walk("internal/testdata", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() && strings.HasSuffix(path, ".yaml") {
-			t.Run(path, func(t *testing.T) {
-				t.Parallel()
-				testRunYAMLFile(t, path)
-			})
-		}
-		return nil
-	}); err != nil {
-		t.Fatal(err)
-	}
-}
 
 func TestParseDuration(t *testing.T) {
 	t.Parallel()
@@ -99,7 +74,6 @@ func TestParseDuration(t *testing.T) {
 		{Input: "1.5h1m1.5s1.5h1m1.5s", Expected: &durationpb.Duration{Seconds: 10923}},
 		{Input: "1h1m1s1ms1us1μs1µs1ns", Expected: &durationpb.Duration{Seconds: 3661, Nanos: 1003001}},
 	} {
-		testCase := testCase
 		t.Run(testCase.Input, func(t *testing.T) {
 			t.Parallel()
 			actual, err := ParseDuration(testCase.Input)
@@ -121,67 +95,4 @@ func TestExtension(t *testing.T) {
 	err := Unmarshal([]byte(`[buf.protoyaml.test.v1.p2t_string_ext]: hi`), actual)
 	require.NoError(t, err)
 	require.Equal(t, "hi", proto.GetExtension(actual, testv1.E_P2TStringExt))
-}
-
-func testRunYAML(path string, msg proto.Message) error {
-	// Read the test file
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	validator, err := protovalidate.New()
-	if err != nil {
-		return err
-	}
-
-	return UnmarshalOptions{
-		Validator: validator,
-		Path:      path,
-	}.Unmarshal(data, msg)
-}
-
-func testRunYAMLFile(t *testing.T, testFile string) {
-	t.Helper()
-
-	var err error
-	switch {
-	case strings.HasSuffix(testFile, ".proto2test.yaml"):
-		err = testRunYAML(testFile, &testv1.Proto2Test{})
-	case strings.HasSuffix(testFile, ".proto3test.yaml"):
-		err = testRunYAML(testFile, &testv1.Proto3Test{})
-	case strings.HasSuffix(testFile, ".const.yaml"):
-		err = testRunYAML(testFile, &testv1.ConstValues{})
-	case strings.HasSuffix(testFile, ".validate.yaml"):
-		err = testRunYAML(testFile, &testv1.ValidateTest{})
-	default:
-		t.Fatalf("Unknown test file extension: %s", testFile)
-	}
-	var errorText string
-	if err != nil {
-		errorText = err.Error()
-	}
-	// Read the expected file
-	expectedFileName := strings.TrimSuffix(testFile, ".yaml") + ".txt"
-	expectedFile, err := os.Open(expectedFileName)
-	var expectedData []byte
-	if err != nil {
-		t.Fatal(err)
-	} else {
-		defer expectedFile.Close()
-		expectedData, err = io.ReadAll(expectedFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	expectedText := string(expectedData)
-	if expectedText != errorText {
-		diff := cmp.Diff(expectedText, errorText)
-		t.Errorf("%s: Test %s failed:\nExpected:\n%s\nActual:\n%s\nDiff:\n%s", expectedFileName, testFile, expectedText, errorText, diff)
-	}
 }

@@ -16,6 +16,7 @@ package protoyaml
 
 import (
 	"bytes"
+	"encoding/json"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -66,26 +67,40 @@ func (o MarshalOptions) Marshal(message proto.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Use a json.Node to preserve the order of fields.
-	jsonNode := &yaml.Node{}
-	if err := yaml.Unmarshal(data, jsonNode); err != nil {
+	yamlVal, err := jsonDataToYAML(data)
+	if err != nil {
 		return nil, err
-	}
-
-	// Clear the style of all nodes to avoid emitting style information in the output.
-	clearStyle(jsonNode)
-	if jsonNode.Kind == yaml.DocumentNode {
-		jsonNode = jsonNode.Content[0]
 	}
 
 	// Write the JSON back out as YAML
 	buffer := &bytes.Buffer{}
 	encoder := yaml.NewEncoder(buffer)
 	encoder.SetIndent(o.Indent)
-	if err := encoder.Encode(jsonNode); err != nil {
+	if err := encoder.Encode(yamlVal); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+func jsonDataToYAML(data []byte) (interface{}, error) {
+	// YAML unmarshal preserves the order of fields, but is more restrictive than JSON.
+	// Prefer it if the data is valid YAML.
+	jsonNode := &yaml.Node{}
+	if err := yaml.Unmarshal(data, jsonNode); err == nil {
+		if jsonNode.Kind == yaml.DocumentNode {
+			jsonNode = jsonNode.Content[0]
+		}
+		clearStyle(jsonNode)
+		return jsonNode, nil
+	}
+
+	// If the data is not valid YAML (e.g. a string contains control characters),
+	// fall back to JSON unmarshal, which loses field order, but is more permissive.
+	var jsonValue interface{}
+	if err := json.Unmarshal(data, &jsonValue); err != nil {
+		return nil, err
+	}
+	return jsonValue, nil
 }
 
 func clearStyle(node *yaml.Node) {
