@@ -123,6 +123,21 @@ func TestExtension(t *testing.T) {
 	require.Equal(t, "hi", proto.GetExtension(actual, testv1.E_P2TStringExt))
 }
 
+func TestDiscardUnknown(t *testing.T) {
+	t.Parallel()
+
+	data := []byte(`unknown: hi`)
+
+	actual := &testv1.Proto2Test{}
+	err := Unmarshal(data, actual)
+	require.Error(t, err)
+
+	err = UnmarshalOptions{
+		DiscardUnknown: true,
+	}.Unmarshal(data, actual)
+	require.NoError(t, err)
+}
+
 func testRunYAML(path string, msg proto.Message) error {
 	// Read the test file
 	file, err := os.Open(path)
