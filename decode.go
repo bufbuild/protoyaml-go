@@ -393,7 +393,7 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 
 func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
 	names := make([]protoreflect.Name, 0, fields.Len())
-	for i := range fields.Len() {
+	for i := 0; i < fields.Len(); i++ {
 		names = append(names, fields.Get(i).Name())
 		if i > 5 {
 			names = append(names, protoreflect.Name("..."))
@@ -405,7 +405,7 @@ func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
 
 func getEnumValueNames(values protoreflect.EnumValueDescriptors) []protoreflect.Name {
 	names := make([]protoreflect.Name, 0, values.Len())
-	for i := range values.Len() {
+	for i := 0; i < values.Len(); i++ {
 		names = append(names, values.Get(i).Name())
 		if i > 5 {
 			names = append(names, protoreflect.Name("..."))
@@ -1074,7 +1074,7 @@ func parseFieldPath(path string) ([]string, error) {
 }
 
 func parseNextFieldName(path string) (string, string) {
-	for i := range len(path) {
+	for i := 0; i < len(path); i++ {
 		switch path[i] {
 		case '.':
 			return path[:i], path[i:]
@@ -1105,7 +1105,7 @@ func parseNextValue(path string) (string, string) {
 		return path, ""
 	}
 	// Go til the trailing ']'
-	for i := range len(path) {
+	for i := 0; i < len(path); i++ {
 		if path[i] == ']' {
 			return path[:i], path[i+1:]
 		}

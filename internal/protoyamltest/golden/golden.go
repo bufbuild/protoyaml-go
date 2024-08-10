@@ -25,6 +25,9 @@ import (
 )
 
 // GenGoldenContent generates golden content for the given file path and data.
+//
+// If the data is invalid, the error message is returned as the golden content.
+// Otherwise, the golden content is the marshaled YAML data.
 func GenGoldenContent(filePath string, data []byte) (string, error) {
 	validator, err := protovalidate.New()
 	if err != nil {

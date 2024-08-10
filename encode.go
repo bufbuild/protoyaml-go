@@ -103,6 +103,10 @@ func jsonDataToYAML(data []byte) (interface{}, error) {
 	return jsonValue, nil
 }
 
+// clearStyle removes all style information from the node and its children.
+//
+// Without this, the returned YAML will look exactly like the JSON input.
+// TODO: Allow yaml style information to be specified in proto.
 func clearStyle(node *yaml.Node) {
 	node.Style = 0
 	for _, child := range node.Content {
