@@ -17,7 +17,15 @@ syntax = "proto2";
 package buf.protoyaml.test.v1;
 
 message Proto2Test {
+  repeated Proto2TestValue values = 1;
   extensions 100 to max;
+}
+
+message Proto2TestValue {
+  oneof oneof_value {
+    string oneof_string_value = 1;
+    int32 oneof_int32_value = 2;
+  }
 }
 
 extend Proto2Test {
