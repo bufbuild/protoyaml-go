@@ -28,6 +28,7 @@ import (
 
 const maxDepth = 6
 
+// PopulateMessage populates the given message with random data.
 func PopulateMessage(msg proto.Message, seed int64) {
 	populateMessage(rand.New(rand.NewSource(seed)), msg, 0)
 }

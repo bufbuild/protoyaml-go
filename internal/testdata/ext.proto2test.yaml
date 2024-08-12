@@ -2,3 +2,8 @@
 '[buf.protoyaml.test.v1.p2t_string_ext]': hi
 [buf.protoyaml.test.v1.p2t_repeated_string_ext]: [hi]
 [buf.protoyaml.test.v1.p2t_repeated_string_ext, hi]: [hi]
+values:
+  - oneof_string_value: hi
+  - oneof_int32_value: 1
+  - oneof_string_value: hi
+    oneof_int32_value: 1

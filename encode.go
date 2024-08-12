@@ -67,16 +67,49 @@ func (o MarshalOptions) Marshal(message proto.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var jsonVal interface{}
-	if err := json.Unmarshal(data, &jsonVal); err != nil {
+	yamlVal, err := jsonDataToYAML(data)
+	if err != nil {
 		return nil, err
 	}
+
 	// Write the JSON back out as YAML
 	buffer := &bytes.Buffer{}
 	encoder := yaml.NewEncoder(buffer)
 	encoder.SetIndent(o.Indent)
-	if err := encoder.Encode(jsonVal); err != nil {
+	if err := encoder.Encode(yamlVal); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+func jsonDataToYAML(data []byte) (interface{}, error) {
+	// YAML unmarshal preserves the order of fields, but is more restrictive than JSON.
+	// Prefer it if the data is valid YAML.
+	jsonNode := &yaml.Node{}
+	if err := yaml.Unmarshal(data, jsonNode); err == nil {
+		if jsonNode.Kind == yaml.DocumentNode {
+			jsonNode = jsonNode.Content[0]
+		}
+		clearStyle(jsonNode)
+		return jsonNode, nil
+	}
+
+	// If the data is not valid YAML (e.g. a string contains control characters),
+	// fall back to JSON unmarshal, which loses field order, but is more permissive.
+	var jsonValue interface{}
+	if err := json.Unmarshal(data, &jsonValue); err != nil {
+		return nil, err
+	}
+	return jsonValue, nil
+}
+
+// clearStyle removes all style information from the node and its children.
+//
+// Without this, the returned YAML will look exactly like the JSON input.
+// TODO: Allow yaml style information to be specified in proto.
+func clearStyle(node *yaml.Node) {
+	node.Style = 0
+	for _, child := range node.Content {
+		clearStyle(child)
+	}
 }

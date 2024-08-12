@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+// InterestingTestValues returns a list of interesting values for testing.
+//
+// For example extrema, zero values, and other values that exercise edge cases.
 func InterestingTestValues() []*proto3.TestAllTypes {
 	var interestingValues []*proto3.TestAllTypes
 	for _, value := range []bool{true, false} {

@@ -1,7 +1,11 @@
-internal/testdata/ext.proto2test.yaml:1:1 unknown field "[undefined]", expected one of []
+internal/testdata/ext.proto2test.yaml:1:1 unknown field "[undefined]", expected one of [values]
    1 | '[undefined]': hi
    1 | ^
 
 internal/testdata/ext.proto2test.yaml:4:1 expected scalar, got sequence
    4 | [buf.protoyaml.test.v1.p2t_repeated_string_ext, hi]: [hi]
    4 | ^
+
+internal/testdata/ext.proto2test.yaml:9:24 field oneof_string_value is already set for oneof oneof_value
+   9 |     oneof_int32_value: 1
+   9 | .......................^
