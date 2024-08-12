@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2023-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+// InterestingTestValues returns a list of interesting values for testing.
+//
+// For example extrema, zero values, and other values that exercise edge cases.
 func InterestingTestValues() []*proto3.TestAllTypes {
 	var interestingValues []*proto3.TestAllTypes
 	for _, value := range []bool{true, false} {

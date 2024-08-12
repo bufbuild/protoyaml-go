@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2023-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -537,6 +537,14 @@ func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescript
 
 // Unmarshal a field, handling isList/isMap.
 func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDescriptor, message proto.Message) {
+	if oneofDesc := field.ContainingOneof(); oneofDesc != nil {
+		// Check if another field in the oneof is already set.
+		if whichOne := message.ProtoReflect().WhichOneof(oneofDesc); whichOne != nil {
+			u.addErrorf(node, fmt.Sprintf("field %v is already set for oneof %v", whichOne.Name(), oneofDesc.Name()))
+			return
+		}
+	}
+
 	switch {
 	case field.IsList():
 		u.unmarshalList(node, field, message.ProtoReflect().Mutable(field).List())
