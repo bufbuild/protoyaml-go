@@ -540,7 +540,7 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 	if oneofDesc := field.ContainingOneof(); oneofDesc != nil {
 		// Check if another field in the oneof is already set.
 		if whichOne := message.ProtoReflect().WhichOneof(oneofDesc); whichOne != nil {
-			u.addErrorf(node, fmt.Sprintf("field %v is already set for oneof %v", whichOne.Name(), oneofDesc.Name()))
+			u.addErrorf(node, "field %v is already set for oneof %v", whichOne.Name(), oneofDesc.Name())
 			return
 		}
 	}
