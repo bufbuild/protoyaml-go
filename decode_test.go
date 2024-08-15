@@ -97,3 +97,23 @@ func TestExtension(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "hi", proto.GetExtension(actual, testv1.E_P2TStringExt))
 }
+
+func TestDiscardUnknown(t *testing.T) {
+	t.Parallel()
+
+	data := []byte(`
+unknown: hi
+values:
+  - oneof_string_value: hi
+`)
+
+	actual := &testv1.Proto2Test{}
+	err := Unmarshal(data, actual)
+	require.Error(t, err)
+
+	err = UnmarshalOptions{
+		DiscardUnknown: true,
+	}.Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Equal(t, "hi", actual.GetValues()[0].GetOneofStringValue())
+}

@@ -54,6 +54,10 @@ type UnmarshalOptions struct {
 		protoregistry.MessageTypeResolver
 		protoregistry.ExtensionTypeResolver
 	}
+
+	// DiscardUnknown specifies whether to discard unknown fields instead of
+	// returning an error.
+	DiscardUnknown bool
 }
 
 // Unmarshal a Protobuf message from the given YAML data.
@@ -643,6 +647,10 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 			message.ProtoReflect().Descriptor().FullName(), getNodeKind(node.Kind))
 		return
 	}
+	u.unmarshalMessageFields(node, message, forAny)
+}
+
+func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, forAny bool) {
 	// Decode the fields
 	msgDesc := message.ProtoReflect().Descriptor()
 	for i := 0; i < len(node.Content); i += 2 {
@@ -670,7 +678,9 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 		field, err := u.findField(key, msgDesc)
 		switch {
 		case errors.Is(err, protoregistry.NotFound):
-			u.addErrorf(keyNode, "unknown field %#v, expected one of %v", key, getFieldNames(msgDesc.Fields()))
+			if !u.options.DiscardUnknown {
+				u.addErrorf(keyNode, "unknown field %#v, expected one of %v", key, getFieldNames(msgDesc.Fields()))
+			}
 		case err != nil:
 			u.addError(keyNode, err)
 		default:
