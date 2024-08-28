@@ -111,7 +111,7 @@ func populateField(rnd *rand.Rand, field protoreflect.FieldDescriptor, msg proto
 		populateList(rnd, field, msg.ProtoReflect().Mutable(field).List(), depth)
 	case field.IsMap():
 		populateMap(rnd, field, msg.ProtoReflect().Mutable(field).Map(), depth)
-	case field.Kind() == protoreflect.MessageKind:
+	case field.Message() != nil:
 		populateMessage(rnd, msg.ProtoReflect().Mutable(field).Message().Interface(), depth)
 	default:
 		msg.ProtoReflect().Set(field, populateScalar(rnd, field))
@@ -125,7 +125,7 @@ func populateList(rnd *rand.Rand, field protoreflect.FieldDescriptor, list proto
 	length := rnd.Intn(10)
 	for i := 0; i < length; i++ {
 		switch field.Kind() {
-		case protoreflect.MessageKind:
+		case protoreflect.MessageKind, protoreflect.GroupKind:
 			msg := list.NewElement()
 			populateMessage(rnd, msg.Message().Interface(), depth+1)
 			list.Append(msg)
@@ -164,7 +164,7 @@ func populateMap(rnd *rand.Rand, field protoreflect.FieldDescriptor, mapVal prot
 func populateMapValue(rnd *rand.Rand, field protoreflect.FieldDescriptor, mapKey protoreflect.MapKey,
 	mapVal protoreflect.Map, depth int) {
 	switch field.Kind() {
-	case protoreflect.MessageKind:
+	case protoreflect.MessageKind, protoreflect.GroupKind:
 		populateMessage(rnd, mapVal.Mutable(mapKey).Message().Interface(), depth)
 	default:
 		mapVal.Set(mapKey, populateScalar(rnd, field))
