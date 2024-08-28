@@ -75,7 +75,15 @@ func (o UnmarshalOptions) Unmarshal(data []byte, message proto.Message) error {
 	if err := yaml.Unmarshal(data, &yamlFile); err != nil {
 		return err
 	}
-	return o.unmarshalNode(&yamlFile, message, data)
+	if err := o.unmarshalNode(&yamlFile, message, data); err != nil {
+		return err
+	}
+	if !o.AllowPartial {
+		if err := proto.CheckInitialized(message); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ParseDuration parses a duration string into a durationpb.Duration.
@@ -666,11 +674,6 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 		return
 	}
 	u.unmarshalMessageFields(node, message, forAny)
-	if len(u.errors) == 0 && !u.options.AllowPartial {
-		if err := proto.CheckInitialized(message); err != nil {
-			u.addError(node, err)
-		}
-	}
 }
 
 func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, forAny bool) {
