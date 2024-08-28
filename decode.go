@@ -138,7 +138,7 @@ func ParseDuration(str string) (*durationpb.Duration, error) {
 		return nil, errors.New("invalid duration: out of range")
 	}
 	result.Seconds = quo.Int64()
-	result.Nanos = int32(rem.Int64())
+	result.Nanos = int32(rem.Int64()) //nolint:gosec // not an overflow risk; value is less than 2^30
 	return result, nil
 }
 
@@ -265,10 +265,12 @@ func (u *unmarshaler) unmarshalScalar(
 	case protoreflect.BoolKind:
 		return protoreflect.ValueOfBool(u.unmarshalBool(node, forKey)), true
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
+		//nolint:gosec // not overflow risk since unmarshalInteger does range check
 		return protoreflect.ValueOfInt32(int32(u.unmarshalInteger(node, 32))), true
 	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
 		return protoreflect.ValueOfInt64(u.unmarshalInteger(node, 64)), true
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		//nolint:gosec // not overflow risk since unmarshalUnsigned does range check
 		return protoreflect.ValueOfUint32(uint32(u.unmarshalUnsigned(node, 32))), true
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
 		return protoreflect.ValueOfUint64(u.unmarshalUnsigned(node, 64)), true
@@ -349,10 +351,13 @@ func (u *unmarshaler) unmarshalEnum(node *yaml.Node, field protoreflect.FieldDes
 		if err != nil {
 			u.addErrorf(node, "unknown enum value %#v, expected one of %v", node.Value,
 				getEnumValueNames(enumDesc.Values()))
+			return 0
 		} else if err := lit.checkI32(field); err != nil {
 			u.addErrorf(node, "%w, expected one of %v", err,
 				getEnumValueNames(enumDesc.Values()))
+			return 0
 		}
+		//nolint:gosec // not overflow risk since list.checkI32 call above does range check
 		num := protoreflect.EnumNumber(lit.value)
 		if lit.negative {
 			num = -num
@@ -403,12 +408,14 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 	}
 	if lit.negative {
 		if lit.value <= 1<<(bits-1) {
+			//nolint:gosec // we just checked on previous line so not overflow risk
 			return -int64(lit.value)
 		}
 		u.addErrorf(node, "integer is too small: < %v", -(1 << (bits - 1)))
 	} else if lit.value >= 1<<(bits-1) {
 		u.addErrorf(node, "integer is too large: > %v", 1<<(bits-1)-1)
 	}
+	//nolint:gosec // we just checked above so not overflow risk
 	return int64(lit.value)
 }
 
@@ -417,7 +424,7 @@ func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
 	for i := 0; i < fields.Len(); i++ {
 		names = append(names, fields.Get(i).Name())
 		if i > 5 {
-			names = append(names, protoreflect.Name("..."))
+			names = append(names, "...")
 			break
 		}
 	}
@@ -429,7 +436,7 @@ func getEnumValueNames(values protoreflect.EnumValueDescriptors) []protoreflect.
 	for i := 0; i < values.Len(); i++ {
 		names = append(names, values.Get(i).Name())
 		if i > 5 {
-			names = append(names, protoreflect.Name("..."))
+			names = append(names, "...")
 			break
 		}
 	}
@@ -544,7 +551,8 @@ func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescript
 		return field, nil
 	}
 	num, err := strconv.ParseInt(key, 10, 32)
-	if err == nil {
+	if err == nil && num > 0 && num <= math.MaxInt32 {
+		//nolint:gosec // we just checked on previous line so not overflow risk
 		if field := fields.ByNumber(protoreflect.FieldNumber(num)); field != nil {
 			return field, nil
 		}
@@ -780,7 +788,7 @@ func parseTimestamp(txt string, timestamp *timestamppb.Timestamp) error {
 	}
 
 	timestamp.Seconds = secs
-	timestamp.Nanos = int32(parsed.Nanosecond())
+	timestamp.Nanos = int32(parsed.Nanosecond()) //nolint:gosec // not an overflow risk; value is less than 2^30
 	return nil
 }
 
