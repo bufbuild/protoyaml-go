@@ -18,9 +18,11 @@ import (
 	"testing"
 
 	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -96,6 +98,42 @@ func TestExtension(t *testing.T) {
 	err := Unmarshal([]byte(`[buf.protoyaml.test.v1.p2t_string_ext]: hi`), actual)
 	require.NoError(t, err)
 	require.Equal(t, "hi", proto.GetExtension(actual, testv1.E_P2TStringExt))
+}
+
+func TestEditions(t *testing.T) {
+	t.Parallel()
+
+	expected := &testv1.EditionsTest{
+		Name: proto.String("foobar"),
+		Nested: &testv1.EditionsTest_Nested{
+			Ids: []int64{0, 1, 1, 2, 3, 5, 8},
+		},
+		Enum: testv1.OpenEnum_OPEN_ENUM_UNSPECIFIED,
+	}
+	actual := &testv1.EditionsTest{}
+	data := []byte(`
+name: "foobar"
+enum: OPEN_ENUM_UNSPECIFIED
+nested:
+  ids: [0, 1, 1, 2, 3, 5, 8]`)
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Empty(t, cmp.Diff(expected, actual, protocmp.Transform()))
+}
+
+func TestRequiredFields(t *testing.T) {
+	t.Parallel()
+
+	actual := &testv1.EditionsTest{}
+	err := Unmarshal([]byte(`enum: OPEN_ENUM_UNSPECIFIED`), actual)
+	require.ErrorContains(t, err, "required field buf.protoyaml.test.v1.EditionsTest.name not set")
+
+	err = UnmarshalOptions{AllowPartial: true}.Unmarshal([]byte(`enum: OPEN_ENUM_UNSPECIFIED`), actual)
+	require.NoError(t, err)
+	expected := &testv1.EditionsTest{
+		Enum: testv1.OpenEnum_OPEN_ENUM_UNSPECIFIED,
+	}
+	require.Empty(t, cmp.Diff(expected, actual, protocmp.Transform()))
 }
 
 func TestDiscardUnknown(t *testing.T) {

@@ -79,11 +79,11 @@ $(BIN):
 	@mkdir -p $(BIN)
 
 $(BIN)/buf: $(BIN) Makefile
-	go install github.com/bufbuild/buf/cmd/buf@latest
+	go install github.com/bufbuild/buf/cmd/buf@v1.36.0
 
 $(BIN)/license-header: $(BIN) Makefile
 	go install \
-		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@latest
+		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.36.0
 
 $(BIN)/golangci-lint: $(BIN) Makefile
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.0

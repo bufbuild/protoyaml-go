@@ -55,6 +55,10 @@ type UnmarshalOptions struct {
 		protoregistry.ExtensionTypeResolver
 	}
 
+	// If AllowPartial is set, input for messages that will result in missing
+	// required fields will not return an error.
+	AllowPartial bool
+
 	// DiscardUnknown specifies whether to discard unknown fields instead of
 	// returning an error.
 	DiscardUnknown bool
@@ -243,32 +247,32 @@ func (u *unmarshaler) unmarshalScalar(
 	node *yaml.Node,
 	field protoreflect.FieldDescriptor,
 	forKey bool,
-) protoreflect.Value {
+) (protoreflect.Value, bool) {
 	switch field.Kind() {
 	case protoreflect.BoolKind:
-		return protoreflect.ValueOfBool(u.unmarshalBool(node, forKey))
+		return protoreflect.ValueOfBool(u.unmarshalBool(node, forKey)), true
 	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind:
-		return protoreflect.ValueOfInt32(int32(u.unmarshalInteger(node, 32)))
+		return protoreflect.ValueOfInt32(int32(u.unmarshalInteger(node, 32))), true
 	case protoreflect.Int64Kind, protoreflect.Sint64Kind, protoreflect.Sfixed64Kind:
-		return protoreflect.ValueOfInt64(u.unmarshalInteger(node, 64))
+		return protoreflect.ValueOfInt64(u.unmarshalInteger(node, 64)), true
 	case protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
-		return protoreflect.ValueOfUint32(uint32(u.unmarshalUnsigned(node, 32)))
+		return protoreflect.ValueOfUint32(uint32(u.unmarshalUnsigned(node, 32))), true
 	case protoreflect.Uint64Kind, protoreflect.Fixed64Kind:
-		return protoreflect.ValueOfUint64(u.unmarshalUnsigned(node, 64))
+		return protoreflect.ValueOfUint64(u.unmarshalUnsigned(node, 64)), true
 	case protoreflect.FloatKind:
-		return protoreflect.ValueOfFloat32(float32(u.unmarshalFloat(node, 32)))
+		return protoreflect.ValueOfFloat32(float32(u.unmarshalFloat(node, 32))), true
 	case protoreflect.DoubleKind:
-		return protoreflect.ValueOfFloat64(u.unmarshalFloat(node, 64))
+		return protoreflect.ValueOfFloat64(u.unmarshalFloat(node, 64)), true
 	case protoreflect.StringKind:
 		u.checkKind(node, yaml.ScalarNode)
-		return protoreflect.ValueOfString(node.Value)
+		return protoreflect.ValueOfString(node.Value), true
 	case protoreflect.BytesKind:
-		return protoreflect.ValueOfBytes(u.unmarshalBytes(node))
+		return protoreflect.ValueOfBytes(u.unmarshalBytes(node)), true
 	case protoreflect.EnumKind:
-		return protoreflect.ValueOfEnum(u.unmarshalEnum(node, field))
+		return protoreflect.ValueOfEnum(u.unmarshalEnum(node, field)), true
 	default:
 		u.addErrorf(node, "unimplemented scalar type %v", field.Kind())
-		return protoreflect.Value{}
+		return protoreflect.Value{}, false
 	}
 }
 
@@ -550,10 +554,12 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 		u.unmarshalList(node, field, message.ProtoReflect().Mutable(field).List())
 	case field.IsMap():
 		u.unmarshalMap(node, field, message.ProtoReflect().Mutable(field).Map())
-	case field.Kind() == protoreflect.MessageKind:
+	case field.Message() != nil:
 		u.unmarshalMessage(node, message.ProtoReflect().Mutable(field).Message().Interface(), false)
 	default:
-		message.ProtoReflect().Set(field, u.unmarshalScalar(node, field, false))
+		if val, ok := u.unmarshalScalar(node, field, false); ok {
+			message.ProtoReflect().Set(field, val)
+		}
 	}
 }
 
@@ -569,7 +575,11 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 			}
 		default:
 			for _, itemNode := range node.Content {
-				list.Append(u.unmarshalScalar(itemNode, field, false))
+				val, ok := u.unmarshalScalar(itemNode, field, false)
+				if !ok {
+					continue
+				}
+				list.Append(val)
 			}
 		}
 	}
@@ -577,21 +587,29 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 
 // Unmarshal the map, with explicit handling for maps to messages.
 func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDescriptor, mapVal protoreflect.Map) {
-	if u.checkKind(node, yaml.MappingNode) {
-		mapKeyField := field.MapKey()
-		mapValueField := field.MapValue()
-		for i := 1; i < len(node.Content); i += 2 {
-			keyNode := node.Content[i-1]
-			valueNode := node.Content[i]
-			mapKey := u.unmarshalScalar(keyNode, mapKeyField, true)
-			switch mapValueField.Kind() {
-			case protoreflect.MessageKind, protoreflect.GroupKind:
-				mapValue := mapVal.NewValue()
-				u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
-				mapVal.Set(mapKey.MapKey(), mapValue)
-			default:
-				mapVal.Set(mapKey.MapKey(), u.unmarshalScalar(valueNode, mapValueField, false))
+	if !u.checkKind(node, yaml.MappingNode) {
+		return
+	}
+	mapKeyField := field.MapKey()
+	mapValueField := field.MapValue()
+	for i := 1; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i-1]
+		valueNode := node.Content[i]
+		mapKey, ok := u.unmarshalScalar(keyNode, mapKeyField, true)
+		if !ok {
+			continue
+		}
+		switch mapValueField.Kind() {
+		case protoreflect.MessageKind, protoreflect.GroupKind:
+			mapValue := mapVal.NewValue()
+			u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
+			mapVal.Set(mapKey.MapKey(), mapValue)
+		default:
+			val, ok := u.unmarshalScalar(valueNode, mapValueField, false)
+			if !ok {
+				continue
 			}
+			mapVal.Set(mapKey.MapKey(), val)
 		}
 	}
 }
@@ -648,6 +666,11 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 		return
 	}
 	u.unmarshalMessageFields(node, message, forAny)
+	if len(u.errors) == 0 && !u.options.AllowPartial {
+		if err := proto.CheckInitialized(message); err != nil {
+			u.addError(node, err)
+		}
+	}
 }
 
 func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, forAny bool) {
