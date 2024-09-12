@@ -18,7 +18,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/bufbuild/protoyaml-go/internal/gen/proto/bufext/cel/expr/conformance/proto3"
+	"buf.build/go/protoyaml/internal/gen/proto/bufext/cel/expr/conformance/proto3"
 )
 
 func TestFloatJsonEncoding(t *testing.T) {

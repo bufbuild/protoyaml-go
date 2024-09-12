@@ -17,7 +17,7 @@ package protoyaml
 import (
 	"testing"
 
-	testv1 "github.com/bufbuild/protoyaml-go/internal/gen/proto/buf/protoyaml/test/v1"
+	testv1 "buf.build/go/protoyaml/internal/gen/proto/buf/protoyaml/test/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
