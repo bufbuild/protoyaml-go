@@ -1,8 +1,8 @@
 # ProtoYAML
 
 [![Build](https://github.com/bufbuild/protoyaml-go/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/bufbuild/protoyaml-go/actions/workflows/ci.yaml)
-[![Report Card](https://goreportcard.com/badge/github.com/bufbuild/protoyaml-go)](https://goreportcard.com/report/github.com/bufbuild/protoyaml-go)
-[![GoDoc](https://pkg.go.dev/badge/github.com/bufbuild/protoyaml-go.svg)](https://pkg.go.dev/github.com/bufbuild/protoyaml-go)
+[![Report Card](https://goreportcard.com/badge/buf.build/go/protoyaml)](https://goreportcard.com/report/buf.build/go/protoyaml)
+[![GoDoc](https://pkg.go.dev/badge/buf.build/go/protoyaml.svg)](https://pkg.go.dev/buf.build/go/protoyaml)
 
 Marshal and unmarshal Protocol Buffers as YAML. Provides fine-grained error details with file, line, column and snippet information.
 
@@ -16,7 +16,7 @@ package main
 import (
   "log"
 
-  "github.com/bufbuild/protoyaml-go"
+  "buf.build/go/protoyaml"
 )
 
 func main() {
@@ -112,7 +112,7 @@ package main
 import (
   "log"
 
-  "github.com/bufbuild/protoyaml-go"
+  "buf.build/go/protoyaml"
   "github.com/bufbuild/protovalidate-go"
 )
 

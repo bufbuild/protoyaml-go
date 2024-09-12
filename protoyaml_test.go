@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/bufbuild/protoyaml-go/internal/gen/proto/bufext/cel/expr/conformance/proto3"
-	"github.com/bufbuild/protoyaml-go/internal/protoyamltest"
+	"buf.build/go/protoyaml/internal/gen/proto/bufext/cel/expr/conformance/proto3"
+	"buf.build/go/protoyaml/internal/protoyamltest"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"

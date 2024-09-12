@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bufbuild/protoyaml-go/internal/protoyamltest/golden"
+	"buf.build/go/protoyaml/internal/protoyamltest/golden"
 )
 
 func main() {
