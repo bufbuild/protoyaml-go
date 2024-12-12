@@ -168,9 +168,9 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		case err == nil: // Valid.
 		case errors.As(err, &verr):
 			for _, violation := range verr.Violations {
-				closest := unm.nodeClosestToPath(node, message.ProtoReflect().Descriptor(), violation.GetFieldPath(), violation.GetForKey())
+				closest := unm.nodeClosestToPath(node, message.ProtoReflect().Descriptor(), protovalidate.FieldPathString(violation.Proto.GetField()), violation.Proto.GetForKey())
 				unm.addError(closest, &violationError{
-					Violation: violation,
+					Violation: violation.Proto,
 				})
 			}
 		default:
