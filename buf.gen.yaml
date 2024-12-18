@@ -6,6 +6,6 @@ managed:
     except:
       - buf.build/bufbuild/protovalidate
 plugins:
-  - plugin: buf.build/protocolbuffers/go:v1.34.0
+  - plugin: buf.build/protocolbuffers/go:v1.36.0
     out: internal/gen/proto
     opt: paths=source_relative

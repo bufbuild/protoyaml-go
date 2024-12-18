@@ -562,7 +562,7 @@ func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescript
 
 // Unmarshal a field, handling isList/isMap.
 func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDescriptor, message proto.Message) {
-	if oneofDesc := field.ContainingOneof(); oneofDesc != nil {
+	if oneofDesc := field.ContainingOneof(); oneofDesc != nil && !oneofDesc.IsSynthetic() {
 		// Check if another field in the oneof is already set.
 		if whichOne := message.ProtoReflect().WhichOneof(oneofDesc); whichOne != nil {
 			u.addErrorf(node, "field %v is already set for oneof %v", whichOne.Name(), oneofDesc.Name())
