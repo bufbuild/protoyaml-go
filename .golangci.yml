@@ -12,6 +12,7 @@ linters-settings:
           - github.com/bufbuild/protoyaml-go/decode
           - github.com/bufbuild/protovalidate-go
           - buf.build/gen/go/bufbuild/protovalidate
+          - github.com/google/cel-go
   errcheck:
     check-type-assertions: true
   forbidigo:

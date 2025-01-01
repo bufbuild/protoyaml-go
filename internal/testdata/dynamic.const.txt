@@ -54,19 +54,19 @@ internal/testdata/dynamic.const.yaml:52:36 invalid float: strconv.ParseFloat: pa
   52 |     repeated_double: [1, "1", 1.5, hi, Infinity, NaN, 9007199254740991, 9007199254740992, 9007199254740993]
   52 | ...................................^
 
-internal/testdata/dynamic.const.yaml:55:22 invalid base64: illegal base64 data at input byte 0
+internal/testdata/dynamic.const.yaml:55:22 expected bytes, got int
   55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
   55 | .....................^
 
-internal/testdata/dynamic.const.yaml:55:25 invalid base64: illegal base64 data at input byte 0
+internal/testdata/dynamic.const.yaml:55:25 expected bytes, got int
   55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
   55 | ........................^
 
-internal/testdata/dynamic.const.yaml:55:30 invalid base64: illegal base64 data at input byte 1
+internal/testdata/dynamic.const.yaml:55:30 expected bytes, got double
   55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
   55 | .............................^
 
-internal/testdata/dynamic.const.yaml:55:68 invalid base64: illegal base64 data at input byte 4
+internal/testdata/dynamic.const.yaml:55:68 expected bytes, got bool
   55 |     repeated_bytes: [1, "1", 1.5, hi, Infinity, NaN, "Zg==", true, false, null]
   55 | ...................................................................^
 

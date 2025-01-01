@@ -46,6 +46,10 @@ var (
 	wktUnmarshalers map[protoreflect.FullName]customUnmarshaler
 )
 
+const (
+	celTag = "!cel"
+)
+
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
 type Validator interface {
 	// Validate the given message.
@@ -155,6 +159,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		options:   o,
 		validator: o.Validator,
 		lines:     strings.Split(string(data), "\n"),
+		this:      message,
 	}
 	if o.CelEnv != nil {
 		unm.celEnv = o.CelEnv
@@ -211,6 +216,7 @@ type unmarshaler struct {
 	validator Validator
 	lines     []string
 	celEnv    *cel.Env
+	this      proto.Message
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
@@ -326,43 +332,26 @@ func (u *unmarshaler) unmarshalString(node *yaml.Node) string {
 		return ""
 	}
 
-	if node.Tag == "!!cel" {
-		if val, celErr := u.celEval(node); celErr != nil {
-			u.addErrorf(node, "invalid CEL expression: %v", celErr)
-		} else if strVal, ok := val.Value().(string); ok {
-			return strVal
-		} else {
-			u.addErrorf(node, "expected string, got %v", val.Type())
-			return ""
-		}
+	if node.Tag != celTag {
+		return node.Value
 	}
 
-	return node.Value
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		return ""
+	}
+	if strVal, ok := val.Value().(string); ok {
+		return strVal
+	}
+	u.addErrorf(node, "expected string, got %v", val.Type())
+	return ""
 }
 
 // Base64 decodes the given node value.
 func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 	if !u.checkKind(node, yaml.ScalarNode) {
 		return nil
-	}
-
-	tryCel := func() ([]byte, error) {
-		val, celErr := u.celEval(node)
-		if celErr != nil {
-			return nil, celErr
-		}
-		if bytesVal, ok := val.Value().([]byte); ok {
-			return bytesVal, nil
-		}
-		return nil, fmt.Errorf("expected bytes, got %v", val.Type())
-	}
-
-	if node.Tag == "!!cel" {
-		data, err := tryCel()
-		if err != nil {
-			u.addError(node, err)
-		}
-		return data
 	}
 
 	enc := base64.StdEncoding
@@ -375,41 +364,61 @@ func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 
 	// base64 decode the value.
 	data, err := enc.DecodeString(node.Value)
-	if err != nil {
-		if data, celErr := tryCel(); celErr == nil {
-			return data
-		}
-		u.addErrorf(node, "invalid base64: %v", err)
+	if err == nil {
+		return data
 	}
-	return data
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else {
+			u.addErrorf(node, "invalid base64: %v", err)
+		}
+		return nil
+	}
+
+	if bytesVal, ok := val.Value().([]byte); ok {
+		return bytesVal
+	}
+	u.addErrorf(node, "expected bytes, got %v", val.Type())
+	return nil
 }
 
 // Unmarshal raw `true` or `false` values, only allowing for strings for keys.
 func (u *unmarshaler) unmarshalBool(node *yaml.Node, forKey bool) bool {
-	if u.checkKind(node, yaml.ScalarNode) {
-		switch node.Value {
-		case "true":
-			if !forKey {
-				u.checkTag(node, "!!bool")
-			}
-			return true
-		case "false":
-			if !forKey {
-				u.checkTag(node, "!!bool")
-			}
-			return false
-		default:
-			if val, celErr := u.celEval(node); celErr == nil {
-				if boolVal, ok := val.Value().(bool); ok {
-					return boolVal
-				}
-				u.addErrorf(node, "expected bool, got %v", val.Type())
+	if !u.checkKind(node, yaml.ScalarNode) {
+		return false
+	}
+
+	switch node.Value {
+	case "true":
+		if !forKey {
+			u.checkTag(node, "!!bool")
+		}
+		return true
+	case "false":
+		if !forKey {
+			u.checkTag(node, "!!bool")
+		}
+		return false
+	default:
+		val, celErr := u.celEval(node)
+		if celErr != nil {
+			if node.Tag == celTag {
+				u.addErrorf(node, "invalid CEL expression: %v", celErr)
 			} else {
 				u.addErrorf(node, "expected bool, got %#v", node.Value)
 			}
+			return false
 		}
+		if boolVal, ok := val.Value().(bool); ok {
+			return boolVal
+		} else {
+			u.addErrorf(node, "expected bool, got %v", val.Type())
+		}
+		return false
 	}
-	return false
 }
 
 // Unmarshal the given node into an enum value.
@@ -452,16 +461,24 @@ func (u *unmarshaler) unmarshalFloat(node *yaml.Node, bits int) float64 {
 	}
 
 	parsed, err := strconv.ParseFloat(node.Value, bits)
-	if err != nil {
-		if val, celErr := u.celEval(node); celErr == nil {
-			if floatVal, ok := val.Value().(float64); ok && (bits == 64 || float64(float32(floatVal)) == floatVal) {
-				parsed = floatVal
-			} else {
-				u.addErrorf(node, "invalid float: %v", err)
-			}
+	if err == nil {
+		return parsed
+	}
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
 		} else {
 			u.addErrorf(node, "invalid float: %v", err)
 		}
+		return 0
+	}
+
+	if floatVal, ok := val.Value().(float64); ok && (bits == 64 || float64(float32(floatVal)) == floatVal) {
+		parsed = floatVal
+	} else {
+		u.addErrorf(node, "invalid float: %v", err)
 	}
 	return parsed
 }
@@ -473,18 +490,29 @@ func (u *unmarshaler) unmarshalUnsigned(node *yaml.Node, bits int) uint64 {
 	}
 
 	parsed, err := parseUintLiteral(node.Value)
-	if err != nil {
-		if val, celErr := u.celEval(node); celErr == nil {
-			if uintVal, ok := val.Value().(uint64); ok {
-				parsed = uintVal
-			} else if intVal, ok := val.Value().(int64); ok && intVal >= 0 {
-				parsed = uint64(intVal)
-			} else {
-				u.addErrorf(node, "expected unsigned integer, got %v", val.Type())
-			}
+	if err == nil {
+		if bits < 64 && parsed >= 1<<bits {
+			u.addErrorf(node, "unsigned integer is too large: > %v", 1<<bits-1)
+		}
+		return parsed
+	}
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
 		} else {
 			u.addErrorf(node, "invalid unsigned integer: %v", err)
 		}
+		return 0
+	}
+
+	if uintVal, ok := val.Value().(uint64); ok {
+		parsed = uintVal
+	} else if intVal, ok := val.Value().(int64); ok && intVal >= 0 {
+		parsed = uint64(intVal)
+	} else {
+		u.addErrorf(node, "expected unsigned integer, got %v", val.Type())
 	}
 
 	if bits < 64 && parsed >= 1<<bits {
@@ -500,28 +528,39 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 	}
 
 	lit, err := parseIntLiteral(node.Value)
-	if err != nil {
-		if val, celErr := u.celEval(node); celErr == nil {
-			if intVal, ok := val.Value().(int64); ok {
-				if intVal < 0 {
-					lit.negative = true
-					lit.value = uint64(-intVal)
-				} else {
-					lit.value = uint64(intVal)
-				}
-			} else if uintVal, ok := val.Value().(uint64); ok {
-				lit.negative = false
-				lit.value = uintVal
-			} else {
-				u.addErrorf(node, "invalid integer: %v", err)
-				return 0
-			}
-		} else {
-			u.addErrorf(node, "invalid integer: %v", err)
-			return 0
-		}
+	if err == nil {
+		return u.validateIntLit(node, lit, bits)
 	}
 
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else {
+			u.addErrorf(node, "invalid integer: %v", err)
+		}
+		return 0
+	}
+
+	if intVal, ok := val.Value().(int64); ok {
+		if intVal < 0 {
+			lit.negative = true
+			lit.value = uint64(-intVal)
+		} else {
+			lit.value = uint64(intVal)
+		}
+	} else if uintVal, ok := val.Value().(uint64); ok {
+		lit.negative = false
+		lit.value = uintVal
+	} else {
+		u.addErrorf(node, "invalid integer: %v", err)
+		return 0
+	}
+
+	return u.validateIntLit(node, lit, bits)
+}
+
+func (u *unmarshaler) validateIntLit(node *yaml.Node, lit intLit, bits int) int64 {
 	if lit.negative {
 		if lit.value <= 1<<(bits-1) {
 			//nolint:gosec // we just checked on previous line so not overflow risk
