@@ -6,7 +6,7 @@ internal/testdata/dynamic.const.yaml:13:12 expected scalar, got mapping
   13 |     value: {}
   13 | ...........^
 
-internal/testdata/dynamic.const.yaml:16:12 expected bool, got "null"
+internal/testdata/dynamic.const.yaml:16:12 expected bool, got null_type
   16 |     value: null
   16 | ...........^
 
@@ -82,11 +82,11 @@ internal/testdata/dynamic.const.yaml:70:7 expected scalar, got sequence
   70 |       []: true
   70 | ......^
 
-internal/testdata/dynamic.const.yaml:71:7 expected bool, got "1"
+internal/testdata/dynamic.const.yaml:71:7 expected bool, got int
   71 |       1: true
   71 | ......^
 
-internal/testdata/dynamic.const.yaml:72:13 expected bool, got "1"
+internal/testdata/dynamic.const.yaml:72:13 expected bool, got int
   72 |       true: 1
   72 | ............^
 
@@ -118,27 +118,27 @@ internal/testdata/dynamic.const.yaml:81:92 integer is too large: > 9223372036854
   81 |     repeated_int64: [1.5, -9223372036854775808, -9223372036854775809, 9223372036854775807, 9223372036854775808]
   81 | ...........................................................................................^
 
-internal/testdata/dynamic.const.yaml:82:23 invalid integer: precision loss
+internal/testdata/dynamic.const.yaml:82:23 expected unsigned integer, got double
   82 |     repeated_uint32: [1.5, -1, 0, 4294967295, 4294967296]
   82 | ......................^
 
-internal/testdata/dynamic.const.yaml:82:28 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+internal/testdata/dynamic.const.yaml:82:28 expected unsigned integer, got int
   82 |     repeated_uint32: [1.5, -1, 0, 4294967295, 4294967296]
   82 | ...........................^
 
-internal/testdata/dynamic.const.yaml:82:47 integer is too large: > 4294967295
+internal/testdata/dynamic.const.yaml:82:47 unsigned integer is too large: > 4294967295
   82 |     repeated_uint32: [1.5, -1, 0, 4294967295, 4294967296]
   82 | ..............................................^
 
-internal/testdata/dynamic.const.yaml:83:23 invalid integer: precision loss
+internal/testdata/dynamic.const.yaml:83:23 expected unsigned integer, got double
   83 |     repeated_uint64: [1.5, -1, 0, 18446744073709551615, 18446744073709551616]
   83 | ......................^
 
-internal/testdata/dynamic.const.yaml:83:28 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+internal/testdata/dynamic.const.yaml:83:28 expected unsigned integer, got int
   83 |     repeated_uint64: [1.5, -1, 0, 18446744073709551615, 18446744073709551616]
   83 | ...........................^
 
-internal/testdata/dynamic.const.yaml:83:57 invalid integer: precision loss
+internal/testdata/dynamic.const.yaml:83:57 invalid unsigned integer: precision loss
   83 |     repeated_uint64: [1.5, -1, 0, 18446744073709551615, 18446744073709551616]
   83 | ........................................................^
 

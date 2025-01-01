@@ -1,8 +1,8 @@
-internal/testdata/basic.proto3test.yaml:7:18 expected bool, got "1"
+internal/testdata/basic.proto3test.yaml:7:18 expected bool, got int
    7 |   - single_bool: 1
    7 | .................^
 
-internal/testdata/basic.proto3test.yaml:8:18 expected bool, got "0"
+internal/testdata/basic.proto3test.yaml:8:18 expected bool, got int
    8 |   - single_bool: 0
    8 | .................^
 
@@ -98,14 +98,6 @@ internal/testdata/basic.proto3test.yaml:51:19 invalid integer: precision loss
   51 |   - single_int64: 9007199254740992.0
   51 | ..................^
 
-internal/testdata/basic.proto3test.yaml:52:19 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
-  52 |   - single_int32: --1
-  52 | ..................^
-
-internal/testdata/basic.proto3test.yaml:53:19 invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
-  53 |   - single_int32: ---1
-  53 | ..................^
-
 internal/testdata/basic.proto3test.yaml:54:19 invalid integer: strconv.ParseUint: parsing "inf": invalid syntax
   54 |   - single_int32: inf
   54 | ..................^
@@ -122,15 +114,15 @@ internal/testdata/basic.proto3test.yaml:57:19 invalid integer: strconv.ParseUint
   57 |   - single_int32: .nan
   57 | ..................^
 
-internal/testdata/basic.proto3test.yaml:58:20 invalid integer: strconv.ParseUint: parsing "-1": invalid syntax
+internal/testdata/basic.proto3test.yaml:58:20 expected unsigned integer, got int
   58 |   - single_uint32: -1
   58 | ...................^
 
-internal/testdata/basic.proto3test.yaml:63:20 integer is too large: > 4294967295
+internal/testdata/basic.proto3test.yaml:63:20 unsigned integer is too large: > 4294967295
   63 |   - single_uint32: 4294967296
   63 | ...................^
 
-internal/testdata/basic.proto3test.yaml:65:20 invalid integer: precision loss
+internal/testdata/basic.proto3test.yaml:65:20 invalid unsigned integer: precision loss
   65 |   - single_uint64: 18446744073709551616
   65 | ...................^
 
@@ -233,3 +225,7 @@ internal/testdata/basic.proto3test.yaml:130:23 expected fields for google.protob
 internal/testdata/basic.proto3test.yaml:135:7 unknown field "@type", expected one of [value]
  135 |       "@type": type.googleapis.com/google.protobuf.Int32Value
  135 | ......^
+
+internal/testdata/basic.proto3test.yaml:142:28 expected unsigned integer, got int
+ 142 |   - single_uint32_wrapper: 1 - 2
+ 142 | ...........................^

@@ -136,3 +136,7 @@ values:
       value: 1
   - single_bytes: "nopad+"
   - single_bytes: "web-safe__"
+  - single_bytes: b"hi"
+  - single_string: !!cel '"hi" + "there"'
+  - single_int32_wrapper: 1 + 3
+  - single_uint32_wrapper: 1 - 2

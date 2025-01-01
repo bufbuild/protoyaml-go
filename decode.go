@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types/ref"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -71,6 +73,9 @@ type UnmarshalOptions struct {
 	// DiscardUnknown specifies whether to discard unknown fields instead of
 	// returning an error.
 	DiscardUnknown bool
+
+	// CelEnv is the CEL environment to use for evaluating CEL expressions.
+	CelEnv *cel.Env
 }
 
 // Unmarshal a Protobuf message from the given YAML data.
@@ -151,6 +156,15 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		validator: o.Validator,
 		lines:     strings.Split(string(data), "\n"),
 	}
+	if o.CelEnv != nil {
+		unm.celEnv = o.CelEnv
+	} else {
+		var err error
+		unm.celEnv, err = cel.NewEnv()
+		if err != nil {
+			return err
+		}
+	}
 
 	// Unwrap the document node
 	if node.Kind == yaml.DocumentNode {
@@ -196,6 +210,7 @@ type unmarshaler struct {
 	errors    []error
 	validator Validator
 	lines     []string
+	celEnv    *cel.Env
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
@@ -254,6 +269,22 @@ func (u *unmarshaler) findAnyType(node *yaml.Node) (protoreflect.MessageType, er
 	return u.resolveAnyType(typeURL)
 }
 
+func (u *unmarshaler) celEval(node *yaml.Node) (ref.Val, error) {
+	ast, issues := u.celEnv.Compile(node.Value)
+	if issues != nil && issues.Err() != nil {
+		return nil, issues.Err()
+	}
+	prg, err := u.celEnv.Program(ast)
+	if err != nil {
+		return nil, err
+	}
+	out, _, err := prg.Eval(map[string]interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Unmarshal the field based on the field kind, ignoring IsList and IsMap,
 // which are handled by the caller.
 func (u *unmarshaler) unmarshalScalar(
@@ -279,8 +310,7 @@ func (u *unmarshaler) unmarshalScalar(
 	case protoreflect.DoubleKind:
 		return protoreflect.ValueOfFloat64(u.unmarshalFloat(node, 64)), true
 	case protoreflect.StringKind:
-		u.checkKind(node, yaml.ScalarNode)
-		return protoreflect.ValueOfString(node.Value), true
+		return protoreflect.ValueOfString(u.unmarshalString(node)), true
 	case protoreflect.BytesKind:
 		return protoreflect.ValueOfBytes(u.unmarshalBytes(node)), true
 	case protoreflect.EnumKind:
@@ -291,10 +321,48 @@ func (u *unmarshaler) unmarshalScalar(
 	}
 }
 
+func (u *unmarshaler) unmarshalString(node *yaml.Node) string {
+	if !u.checkKind(node, yaml.ScalarNode) {
+		return ""
+	}
+
+	if node.Tag == "!!cel" {
+		if val, celErr := u.celEval(node); celErr != nil {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else if strVal, ok := val.Value().(string); ok {
+			return strVal
+		} else {
+			u.addErrorf(node, "expected string, got %v", val.Type())
+			return ""
+		}
+	}
+
+	return node.Value
+}
+
 // Base64 decodes the given node value.
 func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 	if !u.checkKind(node, yaml.ScalarNode) {
 		return nil
+	}
+
+	tryCel := func() ([]byte, error) {
+		val, celErr := u.celEval(node)
+		if celErr != nil {
+			return nil, celErr
+		}
+		if bytesVal, ok := val.Value().([]byte); ok {
+			return bytesVal, nil
+		}
+		return nil, fmt.Errorf("expected bytes, got %v", val.Type())
+	}
+
+	if node.Tag == "!!cel" {
+		data, err := tryCel()
+		if err != nil {
+			u.addError(node, err)
+		}
+		return data
 	}
 
 	enc := base64.StdEncoding
@@ -308,6 +376,9 @@ func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 	// base64 decode the value.
 	data, err := enc.DecodeString(node.Value)
 	if err != nil {
+		if data, celErr := tryCel(); celErr == nil {
+			return data
+		}
 		u.addErrorf(node, "invalid base64: %v", err)
 	}
 	return data
@@ -328,7 +399,14 @@ func (u *unmarshaler) unmarshalBool(node *yaml.Node, forKey bool) bool {
 			}
 			return false
 		default:
-			u.addErrorf(node, "expected bool, got %#v", node.Value)
+			if val, celErr := u.celEval(node); celErr == nil {
+				if boolVal, ok := val.Value().(bool); ok {
+					return boolVal
+				}
+				u.addErrorf(node, "expected bool, got %v", val.Type())
+			} else {
+				u.addErrorf(node, "expected bool, got %#v", node.Value)
+			}
 		}
 	}
 	return false
@@ -375,7 +453,15 @@ func (u *unmarshaler) unmarshalFloat(node *yaml.Node, bits int) float64 {
 
 	parsed, err := strconv.ParseFloat(node.Value, bits)
 	if err != nil {
-		u.addErrorf(node, "invalid float: %v", err)
+		if val, celErr := u.celEval(node); celErr == nil {
+			if floatVal, ok := val.Value().(float64); ok && (bits == 64 || float64(float32(floatVal)) == floatVal) {
+				parsed = floatVal
+			} else {
+				u.addErrorf(node, "invalid float: %v", err)
+			}
+		} else {
+			u.addErrorf(node, "invalid float: %v", err)
+		}
 	}
 	return parsed
 }
@@ -388,10 +474,21 @@ func (u *unmarshaler) unmarshalUnsigned(node *yaml.Node, bits int) uint64 {
 
 	parsed, err := parseUintLiteral(node.Value)
 	if err != nil {
-		u.addErrorf(node, "invalid integer: %v", err)
+		if val, celErr := u.celEval(node); celErr == nil {
+			if uintVal, ok := val.Value().(uint64); ok {
+				parsed = uintVal
+			} else if intVal, ok := val.Value().(int64); ok && intVal >= 0 {
+				parsed = uint64(intVal)
+			} else {
+				u.addErrorf(node, "expected unsigned integer, got %v", val.Type())
+			}
+		} else {
+			u.addErrorf(node, "invalid unsigned integer: %v", err)
+		}
 	}
+
 	if bits < 64 && parsed >= 1<<bits {
-		u.addErrorf(node, "integer is too large: > %v", 1<<bits-1)
+		u.addErrorf(node, "unsigned integer is too large: > %v", 1<<bits-1)
 	}
 	return parsed
 }
@@ -404,8 +501,27 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 
 	lit, err := parseIntLiteral(node.Value)
 	if err != nil {
-		u.addErrorf(node, "invalid integer: %v", err)
+		if val, celErr := u.celEval(node); celErr == nil {
+			if intVal, ok := val.Value().(int64); ok {
+				if intVal < 0 {
+					lit.negative = true
+					lit.value = uint64(-intVal)
+				} else {
+					lit.value = uint64(intVal)
+				}
+			} else if uintVal, ok := val.Value().(uint64); ok {
+				lit.negative = false
+				lit.value = uintVal
+			} else {
+				u.addErrorf(node, "invalid integer: %v", err)
+				return 0
+			}
+		} else {
+			u.addErrorf(node, "invalid integer: %v", err)
+			return 0
+		}
 	}
+
 	if lit.negative {
 		if lit.value <= 1<<(bits-1) {
 			//nolint:gosec // we just checked on previous line so not overflow risk
