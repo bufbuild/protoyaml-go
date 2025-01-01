@@ -160,6 +160,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		validator: o.Validator,
 		lines:     strings.Split(string(data), "\n"),
 		this:      message,
+		now:       time.Now(),
 	}
 	if o.CelEnv != nil {
 		unm.celEnv = o.CelEnv
@@ -174,6 +175,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 	unm.celEnv, err = unm.celEnv.Extend(
 		cel.Types(message),
 		cel.Variable("this", cel.ObjectType(string(message.ProtoReflect().Descriptor().FullName()))),
+		cel.Variable("now", cel.TimestampType),
 	)
 	if err != nil {
 		return err
@@ -225,6 +227,7 @@ type unmarshaler struct {
 	lines     []string
 	celEnv    *cel.Env
 	this      proto.Message
+	now       time.Time
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
@@ -294,6 +297,7 @@ func (u *unmarshaler) celEval(node *yaml.Node) (ref.Val, error) {
 	}
 	out, _, err := prg.Eval(map[string]interface{}{
 		"this": u.this,
+		"now":  u.now,
 	})
 	if err != nil {
 		return nil, err
@@ -938,6 +942,7 @@ func parseTimestamp(txt string, timestamp *timestamppb.Timestamp) error {
 	if err != nil {
 		return err
 	}
+
 	// Validate seconds.
 	secs := parsed.Unix()
 	if secs < minTimestampSeconds {
@@ -966,14 +971,36 @@ func setFieldByName(message proto.Message, name string, value protoreflect.Value
 	return true
 }
 
+func evalDuration(node *yaml.Node, unm *unmarshaler, parseErr error) (*durationpb.Duration, error) {
+	val, celErr := unm.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			return nil, fmt.Errorf("invalid CEL expression: %w", celErr)
+		}
+		return nil, parseErr
+	}
+
+	if durVal, ok := val.Value().(time.Duration); ok {
+		return durationpb.New(durVal), nil
+	}
+	if val.Type() == cel.IntType {
+		return nil, parseErr
+	}
+
+	return nil, fmt.Errorf("expected duration, got %v", val.Type())
+}
+
 func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
 	if node.Kind != yaml.ScalarNode || len(node.Value) == 0 || isNull(node) {
 		return false
 	}
 	duration, err := ParseDuration(node.Value)
 	if err != nil {
-		unm.addError(node, err)
-		return true
+		duration, err = evalDuration(node, unm, err)
+		if err != nil {
+			unm.addError(node, err)
+			return true
+		}
 	}
 
 	if value, ok := message.(*durationpb.Duration); ok {
@@ -987,6 +1014,24 @@ func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Messa
 		setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.GetNanos()))
 }
 
+func (u *unmarshaler) evalTimestamp(node *yaml.Node, timestamp *timestamppb.Timestamp, parseErr error) error {
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			return fmt.Errorf("invalid CEL expression: %w", celErr)
+		}
+		return fmt.Errorf("invalid timestamp: %w", parseErr)
+	}
+
+	if timeVal, ok := val.Value().(time.Time); ok {
+		timestamp.Seconds = timeVal.Unix()
+		timestamp.Nanos = int32(timeVal.Nanosecond()) //nolint:gosec
+		return nil
+	}
+
+	return fmt.Errorf("expected timestamp, got %v", val.Type())
+}
+
 func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
 	if node.Kind != yaml.ScalarNode || len(node.Value) == 0 || isNull(node) {
 		return false
@@ -995,10 +1040,17 @@ func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Mess
 	if !ok {
 		timestamp = &timestamppb.Timestamp{}
 	}
+
 	err := parseTimestamp(node.Value, timestamp)
 	if err != nil {
-		unm.addErrorf(node, "invalid timestamp: %v", err)
-	} else if !ok {
+		err = unm.evalTimestamp(node, timestamp, err)
+		if err != nil {
+			unm.addError(node, err)
+			return true
+		}
+	}
+
+	if !ok {
 		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(timestamp.GetSeconds())) &&
 			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(timestamp.GetNanos()))
 	}

@@ -210,7 +210,7 @@ internal/testdata/basic.proto3test.yaml:121:23 invalid timestamp: parsing time "
  121 |   - single_timestamp: 9999-12-31T23:59:60Z
  121 | ......................^
 
-internal/testdata/basic.proto3test.yaml:125:23 invalid timestamp: parsing time "10" as "2006-01-02T15:04:05.999999999Z07:00": cannot parse "10" as "2006"
+internal/testdata/basic.proto3test.yaml:125:23 expected timestamp, got int
  125 |   - single_timestamp: 10
  125 | ......................^
 
