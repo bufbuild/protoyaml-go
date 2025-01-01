@@ -170,6 +170,14 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 			return err
 		}
 	}
+	var err error
+	unm.celEnv, err = unm.celEnv.Extend(
+		cel.Types(message),
+		cel.Variable("this", cel.ObjectType(string(message.ProtoReflect().Descriptor().FullName()))),
+	)
+	if err != nil {
+		return err
+	}
 
 	// Unwrap the document node
 	if node.Kind == yaml.DocumentNode {
@@ -284,7 +292,9 @@ func (u *unmarshaler) celEval(node *yaml.Node) (ref.Val, error) {
 	if err != nil {
 		return nil, err
 	}
-	out, _, err := prg.Eval(map[string]interface{}{})
+	out, _, err := prg.Eval(map[string]interface{}{
+		"this": u.this,
+	})
 	if err != nil {
 		return nil, err
 	}
