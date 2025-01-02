@@ -144,6 +144,6 @@ values:
   - single_timestamp: now
   - single_duration: now - timestamp("1970-01-01T00:00:00Z")
   - map_int64_nested_type:
-      1: { payload: { single_int32: 1 } }
-      2: { payload: { single_sint32: "this.values[135].map_int64_nested_type[1].payload.single_int32 + 1" } }
+      1: { payload: { single_int32: 1, single_fixed32: "this.values[135].map_int64_nested_type[1].payload.single_int32 + 1" } }
+      2: { payload: { single_sint32: "this.values[135].map_int64_nested_type[1].payload.single_fixed32 + 1u" } }
       3: "this.values[135].map_int64_nested_type[2]"
