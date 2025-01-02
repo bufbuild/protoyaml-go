@@ -765,11 +765,9 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 			}
 		default:
 			for _, itemNode := range node.Content {
-				val, ok := u.unmarshalScalar(itemNode, field, false)
-				if !ok {
-					continue
+				if val, ok := u.unmarshalScalar(itemNode, field, false); ok {
+					list.Append(val)
 				}
-				list.Append(val)
 			}
 		}
 	}
@@ -792,14 +790,12 @@ func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDesc
 		switch mapValueField.Kind() {
 		case protoreflect.MessageKind, protoreflect.GroupKind:
 			mapValue := mapVal.NewValue()
-			u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
 			mapVal.Set(mapKey.MapKey(), mapValue)
+			u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
 		default:
-			val, ok := u.unmarshalScalar(valueNode, mapValueField, false)
-			if !ok {
-				continue
+			if val, ok := u.unmarshalScalar(valueNode, mapValueField, false); ok {
+				mapVal.Set(mapKey.MapKey(), val)
 			}
-			mapVal.Set(mapKey.MapKey(), val)
 		}
 	}
 }
@@ -850,12 +846,26 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 	if isNull(node) {
 		return // Null is always allowed for messages
 	}
-	if node.Kind != yaml.MappingNode {
+	switch node.Kind {
+	case yaml.MappingNode:
+		u.unmarshalMessageFields(node, message, forAny)
+	case yaml.ScalarNode:
+		if val, err := u.celEval(node); err == nil {
+			if protoVal, ok := val.Value().(proto.Message); ok {
+				if protoVal.ProtoReflect().Descriptor() == message.ProtoReflect().Descriptor() {
+					proto.Merge(message, protoVal)
+					return
+				}
+			}
+		} else if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", err)
+			return
+		}
+		fallthrough
+	default:
 		u.addErrorf(node, "expected fields for %v, got %v",
 			message.ProtoReflect().Descriptor().FullName(), getNodeKind(node.Kind))
-		return
 	}
-	u.unmarshalMessageFields(node, message, forAny)
 }
 
 func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, forAny bool) {
