@@ -760,8 +760,8 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 		case protoreflect.MessageKind, protoreflect.GroupKind:
 			for _, itemNode := range node.Content {
 				msgVal := list.NewElement()
-				u.unmarshalMessage(itemNode, msgVal.Message().Interface(), false)
 				list.Append(msgVal)
+				u.unmarshalMessage(itemNode, msgVal.Message().Interface(), false)
 			}
 		default:
 			for _, itemNode := range node.Content {
@@ -1103,10 +1103,10 @@ func dynSetListValue(message proto.Message, list *structpb.ListValue) bool {
 	values := message.ProtoReflect().Mutable(valuesFld).List()
 	for _, item := range list.GetValues() {
 		value := values.NewElement()
+		values.Append(value)
 		if !dynSetValue(value.Message().Interface(), item) {
 			return false
 		}
-		values.Append(value)
 	}
 	return true
 }
