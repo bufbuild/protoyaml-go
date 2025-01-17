@@ -241,3 +241,7 @@ internal/testdata/basic.proto3test.yaml:142:21 invalid integer: integer is too l
 internal/testdata/basic.proto3test.yaml:144:19 integer is too small: < -2147483648
  144 |   - single_int32: -1Ti
  144 | ..................^
+
+internal/testdata/basic.proto3test.yaml:145:19 invalid integer: invalid bytes: unknown unit, expected one of [K M G T P E Ki Mi Gi Ti Pi Ei]
+ 145 |   - single_int32: 1Ai
+ 145 | ..................^
