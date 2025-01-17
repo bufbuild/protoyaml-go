@@ -142,3 +142,4 @@ values:
   - single_fixed64: 1000Ei
   - single_int32: -1Ki
   - single_int32: -1Ti
+  - single_int32: 1Ai
