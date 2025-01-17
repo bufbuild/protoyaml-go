@@ -465,6 +465,7 @@ func getNodeKind(kind yaml.Kind) string {
 // exponential notation. This function will parse those values back into integers
 // if possible.
 func parseUintLiteral(value string) (uint64, error) {
+	// Try to parse as an unsigned integer.
 	base := 10
 	if len(value) >= 2 && strings.HasPrefix(value, "0") {
 		switch value[1] {
@@ -479,20 +480,39 @@ func parseUintLiteral(value string) (uint64, error) {
 			value = value[2:]
 		}
 	}
-
 	parsed, err := strconv.ParseUint(value, base, 64)
-	if err != nil {
-		parsedFloat, floatErr := strconv.ParseFloat(value, 64)
-		if floatErr != nil || parsedFloat < 0 || math.IsInf(parsedFloat, 0) || math.IsNaN(parsedFloat) {
+	if err == nil || base != 10 {
+		return parsed, err
+	}
+
+	// Try to parse as an unsigned integer encoded as a float.
+	parsedFloat, floatErr := strconv.ParseFloat(value, 64)
+	if floatErr == nil {
+		if parsedFloat < 0 || math.IsInf(parsedFloat, 0) || math.IsNaN(parsedFloat) {
 			return 0, err
 		}
+
 		// See if it's actually an integer.
 		parsed = uint64(parsedFloat)
 		if float64(parsed) != parsedFloat || parsed >= (1<<53) {
 			return parsed, errors.New("precision loss")
 		}
+		return parsed, nil
 	}
-	return parsed, nil
+
+	// Try to parse as bytes.
+	byteCount := &big.Int{}
+	rem, bytesErr := parseBytes(value, byteCount)
+	switch {
+	case bytesErr != nil:
+		return 0, bytesErr // Likely a better error message.
+	case rem != "": // Extra characters.
+		return 0, err
+	}
+	if byteCount.BitLen() > 64 {
+		return 0, errors.New("integer is too large")
+	}
+	return byteCount.Uint64(), nil
 }
 
 type intLit struct {
@@ -1225,8 +1245,11 @@ func findEntryByKey(cur *yaml.Node, key string) (*yaml.Node, *yaml.Node, bool) {
 // nanosPerSecond is the number of nanoseconds in a second.
 var nanosPerSecond = new(big.Int).SetUint64(uint64(time.Second / time.Nanosecond))
 
-// nanosMap is a map of time unit names to their duration in nanoseconds.
-var nanosMap = map[string]*big.Int{
+// durationUnitNames is the (normalized) list of time unit names.
+var durationUnitNames = []string{"h", "m", "s", "ms", "us", "ns"}
+
+// nanosPerUnitMap is a map of time unit names to their duration in nanoseconds.
+var nanosPerUnitMap = map[string]*big.Int{
 	"ns": new(big.Int).SetUint64(1), // Identity for nanos.
 	"us": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)),
 	"µs": new(big.Int).SetUint64(uint64(time.Microsecond / time.Nanosecond)), // U+00B5 = micro symbol
@@ -1237,41 +1260,20 @@ var nanosMap = map[string]*big.Int{
 	"h":  new(big.Int).SetUint64(uint64(time.Hour / time.Nanosecond)),
 }
 
-// unitsNames is the (normalized) list of time unit names.
-var unitsNames = []string{"h", "m", "s", "ms", "us", "ns"}
-
 // parseDurationNest parses a single segment of the duration string.
 func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
-	// The next character must be [0-9.]
-	if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
-		return "", errors.New("invalid duration")
-	}
-	var err error
-	var whole, frac uint64
-	var pre bool // Whether we have seen a digit before the dot.
-	whole, str, pre, err = leadingInt(str)
+	// Parse the number and unit.
+	whole, frac, scale, unitName, str, err := parseNumberWithUnit(str)
 	if err != nil {
 		return "", err
 	}
-	var scale *big.Int
-	var post bool // Whether we have seen a digit after the dot.
-	if str != "" && str[0] == '.' {
-		str = str[1:]
-		frac, scale, str, post = leadingFrac(str)
-	}
-	if !pre && !post {
-		return "", errors.New("invalid duration")
+	if unitName == "" {
+		return "", fmt.Errorf("invalid duration: missing unit, expected one of %v", durationUnitNames)
 	}
 
-	end := unitEnd(str)
-	if end == 0 {
-		return "", fmt.Errorf("invalid duration: missing unit, expected one of %v", unitsNames)
-	}
-	unitName := str[:end]
-	str = str[end:]
-	nanosPerUnit, ok := nanosMap[unitName]
+	nanosPerUnit, ok := nanosPerUnitMap[unitName]
 	if !ok {
-		return "", fmt.Errorf("invalid duration: unknown unit, expected one of %v", unitsNames)
+		return "", fmt.Errorf("invalid duration: unknown unit, expected one of %v", durationUnitNames)
 	}
 
 	// Convert to nanos and add to total.
@@ -1294,6 +1296,83 @@ func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
 		totalNanos.Add(totalNanos, fracNanos)
 	}
 	return str, nil
+}
+
+// bytesUnitNames is the list of byte unit names.
+// E is exabyte, P is petabyte, T is terabyte, G is gigabyte, M is megabyte, K is kilobyte.
+// The i suffix indicates a binary unit (e.g., Ki = 1024).
+var bytesUnitNames = []string{"K", "M", "G", "T", "P", "E", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei"}
+
+// A map from unit to the number of bytes in that unit.
+var bytesPerUnitMap = map[string]uint64{
+	"":   1,
+	"K":  1000,
+	"Ki": 1 << 10,
+	"M":  1000 * 1000,
+	"Mi": 1 << 20,
+	"G":  1000 * 1000 * 1000,
+	"Gi": 1 << 30,
+	"T":  1000 * 1000 * 1000 * 1000,
+	"Ti": 1 << 40,
+	"P":  1000 * 1000 * 1000 * 1000 * 1000,
+	"Pi": 1 << 50,
+	"E":  1000 * 1000 * 1000 * 1000 * 1000 * 1000,
+	"Ei": 1 << 60,
+}
+
+func parseBytes(str string, totalBytes *big.Int) (string, error) {
+	whole, frac, scale, unitName, str, err := parseNumberWithUnit(str)
+	if err != nil {
+		return "", err
+	}
+
+	bytesPerUnit, ok := bytesPerUnitMap[unitName]
+	if !ok {
+		return "", fmt.Errorf("invalid bytes: unknown unit, expected one of %v", bytesUnitNames)
+	}
+
+	// Convert to bytes and add to total.
+	// totalBytes += whole * bytesPerUnit + frac * bytesPerUnit / scale
+	if whole > 0 {
+		wholeBytes := &big.Int{}
+		wholeBytes.SetUint64(whole)
+		wholeBytes.Mul(wholeBytes, big.NewInt(int64(bytesPerUnit)))
+		totalBytes.Add(totalBytes, wholeBytes)
+	}
+	if frac > 0 {
+		fracBytes := &big.Int{}
+		fracBytes.SetUint64(frac)
+		fracBytes.Mul(fracBytes, big.NewInt(int64(bytesPerUnit)))
+		rem := &big.Int{}
+		fracBytes.QuoRem(fracBytes, scale, rem)
+		totalBytes.Add(totalBytes, fracBytes)
+	}
+	return str, nil
+}
+
+func parseNumberWithUnit(str string) (whole, frac uint64, scale *big.Int, unitName string, rem string, err error) {
+	// The next character must be [0-9.]
+	if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
+		return whole, frac, scale, unitName, str, errors.New("invalid number, expected digit")
+	}
+	var pre bool // Whether we have seen a digit before the dot.
+	whole, str, pre, err = leadingInt(str)
+	if err != nil {
+		return whole, frac, scale, unitName, str, err
+	}
+	var post bool // Whether we have seen a digit after the dot.
+	if str != "" && str[0] == '.' {
+		str = str[1:]
+		frac, scale, str, post = leadingFrac(str)
+	}
+	if !pre && !post {
+		return whole, frac, scale, unitName, str, errors.New("invalid number, expected digit")
+	}
+
+	end := unitEnd(str)
+	unitName = str[:end]
+	str = str[end:]
+	return whole, frac, scale, unitName, str, nil
 }
 
 func unitEnd(str string) int {

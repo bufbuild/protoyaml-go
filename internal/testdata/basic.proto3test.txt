@@ -102,7 +102,7 @@ internal/testdata/basic.proto3test.yaml:52:19 invalid integer: strconv.ParseUint
   52 |   - single_int32: --1
   52 | ..................^
 
-internal/testdata/basic.proto3test.yaml:53:19 invalid integer: strconv.ParseUint: parsing "--1": invalid syntax
+internal/testdata/basic.proto3test.yaml:53:19 invalid integer: invalid number, expected digit
   53 |   - single_int32: ---1
   53 | ..................^
 
@@ -110,15 +110,15 @@ internal/testdata/basic.proto3test.yaml:54:19 invalid integer: strconv.ParseUint
   54 |   - single_int32: inf
   54 | ..................^
 
-internal/testdata/basic.proto3test.yaml:55:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
+internal/testdata/basic.proto3test.yaml:55:19 invalid integer: invalid number, expected digit
   55 |   - single_int32: .inf
   55 | ..................^
 
-internal/testdata/basic.proto3test.yaml:56:19 invalid integer: strconv.ParseUint: parsing ".inf": invalid syntax
+internal/testdata/basic.proto3test.yaml:56:19 invalid integer: invalid number, expected digit
   56 |   - single_int32: -.inf
   56 | ..................^
 
-internal/testdata/basic.proto3test.yaml:57:19 invalid integer: strconv.ParseUint: parsing ".nan": invalid syntax
+internal/testdata/basic.proto3test.yaml:57:19 invalid integer: invalid number, expected digit
   57 |   - single_int32: .nan
   57 | ..................^
 
@@ -162,7 +162,7 @@ internal/testdata/basic.proto3test.yaml:98:21 expected sequence, got scalar
   98 |   - repeated_int32: 1
   98 | ....................^
 
-internal/testdata/basic.proto3test.yaml:100:30 invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
+internal/testdata/basic.proto3test.yaml:100:30 invalid integer: invalid number, expected digit
  100 |   - repeated_int32: [1, "1", hi]
  100 | .............................^
 
@@ -194,11 +194,11 @@ internal/testdata/basic.proto3test.yaml:110:22 invalid duration: fractional nano
  110 |   - single_duration: 1.0123456789s
  110 | .....................^
 
-internal/testdata/basic.proto3test.yaml:111:22 invalid duration
+internal/testdata/basic.proto3test.yaml:111:22 invalid number, expected digit
  111 |   - single_duration: As
  111 | .....................^
 
-internal/testdata/basic.proto3test.yaml:112:22 invalid duration
+internal/testdata/basic.proto3test.yaml:112:22 invalid number, expected digit
  112 |   - single_duration: A.1s
  112 | .....................^
 
