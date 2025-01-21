@@ -1304,8 +1304,7 @@ func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
 var bytesUnitNames = []string{"K", "M", "G", "T", "P", "E", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei"}
 
 // A map from unit to the number of bytes in that unit.
-var bytesPerUnitMap = map[string]uint64{
-	"":   1,
+var bytesPerUnitMap = map[string]int64{
 	"K":  1000,
 	"Ki": 1 << 10,
 	"M":  1000 * 1000,
@@ -1336,13 +1335,13 @@ func parseBytes(str string, totalBytes *big.Int) (string, error) {
 	if whole > 0 {
 		wholeBytes := &big.Int{}
 		wholeBytes.SetUint64(whole)
-		wholeBytes.Mul(wholeBytes, big.NewInt(int64(bytesPerUnit)))
+		wholeBytes.Mul(wholeBytes, big.NewInt(bytesPerUnit))
 		totalBytes.Add(totalBytes, wholeBytes)
 	}
 	if frac > 0 {
 		fracBytes := &big.Int{}
 		fracBytes.SetUint64(frac)
-		fracBytes.Mul(fracBytes, big.NewInt(int64(bytesPerUnit)))
+		fracBytes.Mul(fracBytes, big.NewInt(bytesPerUnit))
 		rem := &big.Int{}
 		fracBytes.QuoRem(fracBytes, scale, rem)
 		totalBytes.Add(totalBytes, fracBytes)
