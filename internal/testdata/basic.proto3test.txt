@@ -249,3 +249,7 @@ internal/testdata/basic.proto3test.yaml:145:19 invalid integer: invalid bytes: u
 internal/testdata/basic.proto3test.yaml:146:19 invalid integer: precision loss
  146 |   - single_int32: 1.1
  146 | ..................^
+
+internal/testdata/basic.proto3test.yaml:147:19 invalid integer: strconv.ParseUint: parsing "1Mi1K": invalid syntax
+ 147 |   - single_int32: 1Mi1K
+ 147 | ..................^
