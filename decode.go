@@ -178,10 +178,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		}
 	}
 
-	if len(unm.errors) > 0 {
-		return unmarshalErrors(unm.errors)
-	}
-	return nil
+	return errors.Join(unm.errors...)
 }
 
 const atTypeFieldName = "@type"
