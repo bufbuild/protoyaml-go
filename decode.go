@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/protovalidate-go"
+	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types/ref"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -42,6 +44,10 @@ var (
 	// (the initializer expression refers to the function
 	// unmarshalAnyMsg, which indirectly refers back to this var).
 	wktUnmarshalers map[protoreflect.FullName]customUnmarshaler
+)
+
+const (
+	celTag = "!cel"
 )
 
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
@@ -71,6 +77,9 @@ type UnmarshalOptions struct {
 	// DiscardUnknown specifies whether to discard unknown fields instead of
 	// returning an error.
 	DiscardUnknown bool
+
+	// CelEnv is the CEL environment to use for evaluating CEL expressions.
+	CelEnv *cel.Env
 }
 
 // Unmarshal a Protobuf message from the given YAML data.
@@ -150,6 +159,26 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		options:   o,
 		validator: o.Validator,
 		lines:     strings.Split(string(data), "\n"),
+		this:      message,
+		now:       time.Now(),
+	}
+	if o.CelEnv != nil {
+		unm.celEnv = o.CelEnv
+	} else {
+		var err error
+		unm.celEnv, err = cel.NewEnv()
+		if err != nil {
+			return err
+		}
+	}
+	var err error
+	unm.celEnv, err = unm.celEnv.Extend(
+		cel.Types(message),
+		cel.Variable("this", cel.ObjectType(string(message.ProtoReflect().Descriptor().FullName()))),
+		cel.Variable("now", cel.TimestampType),
+	)
+	if err != nil {
+		return err
 	}
 
 	// Unwrap the document node
@@ -193,6 +222,9 @@ type unmarshaler struct {
 	errors    []error
 	validator Validator
 	lines     []string
+	celEnv    *cel.Env
+	this      proto.Message
+	now       time.Time
 }
 
 func (u *unmarshaler) addError(node *yaml.Node, err error) {
@@ -251,6 +283,25 @@ func (u *unmarshaler) findAnyType(node *yaml.Node) (protoreflect.MessageType, er
 	return u.resolveAnyType(typeURL)
 }
 
+func (u *unmarshaler) celEval(node *yaml.Node) (ref.Val, error) {
+	ast, issues := u.celEnv.Compile(node.Value)
+	if issues != nil && issues.Err() != nil {
+		return nil, issues.Err()
+	}
+	prg, err := u.celEnv.Program(ast)
+	if err != nil {
+		return nil, err
+	}
+	out, _, err := prg.Eval(map[string]interface{}{
+		"this": u.this,
+		"now":  u.now,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Unmarshal the field based on the field kind, ignoring IsList and IsMap,
 // which are handled by the caller.
 func (u *unmarshaler) unmarshalScalar(
@@ -276,8 +327,7 @@ func (u *unmarshaler) unmarshalScalar(
 	case protoreflect.DoubleKind:
 		return protoreflect.ValueOfFloat64(u.unmarshalFloat(node, 64)), true
 	case protoreflect.StringKind:
-		u.checkKind(node, yaml.ScalarNode)
-		return protoreflect.ValueOfString(node.Value), true
+		return protoreflect.ValueOfString(u.unmarshalString(node)), true
 	case protoreflect.BytesKind:
 		return protoreflect.ValueOfBytes(u.unmarshalBytes(node)), true
 	case protoreflect.EnumKind:
@@ -286,6 +336,27 @@ func (u *unmarshaler) unmarshalScalar(
 		u.addErrorf(node, "unimplemented scalar type %v", field.Kind())
 		return protoreflect.Value{}, false
 	}
+}
+
+func (u *unmarshaler) unmarshalString(node *yaml.Node) string {
+	if !u.checkKind(node, yaml.ScalarNode) {
+		return ""
+	}
+
+	if node.Tag != celTag {
+		return node.Value
+	}
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		return ""
+	}
+	if strVal, ok := val.Value().(string); ok {
+		return strVal
+	}
+	u.addErrorf(node, "expected string, got %v", val.Type())
+	return ""
 }
 
 // Base64 decodes the given node value.
@@ -304,31 +375,61 @@ func (u *unmarshaler) unmarshalBytes(node *yaml.Node) []byte {
 
 	// base64 decode the value.
 	data, err := enc.DecodeString(node.Value)
-	if err != nil {
-		u.addErrorf(node, "invalid base64: %v", err)
+	if err == nil {
+		return data
 	}
-	return data
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else {
+			u.addErrorf(node, "invalid base64: %v", err)
+		}
+		return nil
+	}
+
+	if bytesVal, ok := val.Value().([]byte); ok {
+		return bytesVal
+	}
+	u.addErrorf(node, "expected bytes, got %v", val.Type())
+	return nil
 }
 
 // Unmarshal raw `true` or `false` values, only allowing for strings for keys.
 func (u *unmarshaler) unmarshalBool(node *yaml.Node, forKey bool) bool {
-	if u.checkKind(node, yaml.ScalarNode) {
-		switch node.Value {
-		case "true":
-			if !forKey {
-				u.checkTag(node, "!!bool")
-			}
-			return true
-		case "false":
-			if !forKey {
-				u.checkTag(node, "!!bool")
+	if !u.checkKind(node, yaml.ScalarNode) {
+		return false
+	}
+
+	switch node.Value {
+	case "true":
+		if !forKey {
+			u.checkTag(node, "!!bool")
+		}
+		return true
+	case "false":
+		if !forKey {
+			u.checkTag(node, "!!bool")
+		}
+		return false
+	default:
+		val, celErr := u.celEval(node)
+		if celErr != nil {
+			if node.Tag == celTag {
+				u.addErrorf(node, "invalid CEL expression: %v", celErr)
+			} else {
+				u.addErrorf(node, "expected bool, got %#v", node.Value)
 			}
 			return false
-		default:
-			u.addErrorf(node, "expected bool, got %#v", node.Value)
 		}
+		if boolVal, ok := val.Value().(bool); ok {
+			return boolVal
+		} else {
+			u.addErrorf(node, "expected bool, got %v", val.Type())
+		}
+		return false
 	}
-	return false
 }
 
 // Unmarshal the given node into an enum value.
@@ -371,7 +472,23 @@ func (u *unmarshaler) unmarshalFloat(node *yaml.Node, bits int) float64 {
 	}
 
 	parsed, err := strconv.ParseFloat(node.Value, bits)
-	if err != nil {
+	if err == nil {
+		return parsed
+	}
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else {
+			u.addErrorf(node, "invalid float: %v", err)
+		}
+		return 0
+	}
+
+	if floatVal, ok := val.Value().(float64); ok && (bits == 64 || float64(float32(floatVal)) == floatVal) {
+		parsed = floatVal
+	} else {
 		u.addErrorf(node, "invalid float: %v", err)
 	}
 	return parsed
@@ -384,11 +501,33 @@ func (u *unmarshaler) unmarshalUnsigned(node *yaml.Node, bits int) uint64 {
 	}
 
 	parsed, err := parseUintLiteral(node.Value)
-	if err != nil {
-		u.addErrorf(node, "invalid integer: %v", err)
+	if err == nil {
+		if bits < 64 && parsed >= 1<<bits {
+			u.addErrorf(node, "unsigned integer is too large: > %v", 1<<bits-1)
+		}
+		return parsed
 	}
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else {
+			u.addErrorf(node, "invalid unsigned integer: %v", err)
+		}
+		return 0
+	}
+
+	if uintVal, ok := val.Value().(uint64); ok {
+		parsed = uintVal
+	} else if intVal, ok := val.Value().(int64); ok && intVal >= 0 {
+		parsed = uint64(intVal)
+	} else {
+		u.addErrorf(node, "expected unsigned integer, got %v", val.Type())
+	}
+
 	if bits < 64 && parsed >= 1<<bits {
-		u.addErrorf(node, "integer is too large: > %v", 1<<bits-1)
+		u.addErrorf(node, "unsigned integer is too large: > %v", 1<<bits-1)
 	}
 	return parsed
 }
@@ -400,9 +539,39 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 	}
 
 	lit, err := parseIntLiteral(node.Value)
-	if err != nil {
-		u.addErrorf(node, "invalid integer: %v", err)
+	if err == nil {
+		return u.validateIntLit(node, lit, bits)
 	}
+
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", celErr)
+		} else {
+			u.addErrorf(node, "invalid integer: %v", err)
+		}
+		return 0
+	}
+
+	if intVal, ok := val.Value().(int64); ok {
+		if intVal < 0 {
+			lit.negative = true
+			lit.value = uint64(-intVal)
+		} else {
+			lit.value = uint64(intVal)
+		}
+	} else if uintVal, ok := val.Value().(uint64); ok {
+		lit.negative = false
+		lit.value = uintVal
+	} else {
+		u.addErrorf(node, "invalid integer: %v", err)
+		return 0
+	}
+
+	return u.validateIntLit(node, lit, bits)
+}
+
+func (u *unmarshaler) validateIntLit(node *yaml.Node, lit intLit, bits int) int64 {
 	if lit.negative {
 		if lit.value <= 1<<(bits-1) {
 			//nolint:gosec // we just checked on previous line so not overflow risk
@@ -588,16 +757,14 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 		case protoreflect.MessageKind, protoreflect.GroupKind:
 			for _, itemNode := range node.Content {
 				msgVal := list.NewElement()
-				u.unmarshalMessage(itemNode, msgVal.Message().Interface(), false)
 				list.Append(msgVal)
+				u.unmarshalMessage(itemNode, msgVal.Message().Interface(), false)
 			}
 		default:
 			for _, itemNode := range node.Content {
-				val, ok := u.unmarshalScalar(itemNode, field, false)
-				if !ok {
-					continue
+				if val, ok := u.unmarshalScalar(itemNode, field, false); ok {
+					list.Append(val)
 				}
-				list.Append(val)
 			}
 		}
 	}
@@ -620,14 +787,12 @@ func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDesc
 		switch mapValueField.Kind() {
 		case protoreflect.MessageKind, protoreflect.GroupKind:
 			mapValue := mapVal.NewValue()
-			u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
 			mapVal.Set(mapKey.MapKey(), mapValue)
+			u.unmarshalMessage(valueNode, mapValue.Message().Interface(), false)
 		default:
-			val, ok := u.unmarshalScalar(valueNode, mapValueField, false)
-			if !ok {
-				continue
+			if val, ok := u.unmarshalScalar(valueNode, mapValueField, false); ok {
+				mapVal.Set(mapKey.MapKey(), val)
 			}
-			mapVal.Set(mapKey.MapKey(), val)
 		}
 	}
 }
@@ -678,12 +843,26 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 	if isNull(node) {
 		return // Null is always allowed for messages
 	}
-	if node.Kind != yaml.MappingNode {
+	switch node.Kind {
+	case yaml.MappingNode:
+		u.unmarshalMessageFields(node, message, forAny)
+	case yaml.ScalarNode:
+		if val, err := u.celEval(node); err == nil {
+			if protoVal, ok := val.Value().(proto.Message); ok {
+				if protoVal.ProtoReflect().Descriptor() == message.ProtoReflect().Descriptor() {
+					proto.Merge(message, protoVal)
+					return
+				}
+			}
+		} else if node.Tag == celTag {
+			u.addErrorf(node, "invalid CEL expression: %v", err)
+			return
+		}
+		fallthrough
+	default:
 		u.addErrorf(node, "expected fields for %v, got %v",
 			message.ProtoReflect().Descriptor().FullName(), getNodeKind(node.Kind))
-		return
 	}
-	u.unmarshalMessageFields(node, message, forAny)
 }
 
 func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, forAny bool) {
@@ -770,6 +949,7 @@ func parseTimestamp(txt string, timestamp *timestamppb.Timestamp) error {
 	if err != nil {
 		return err
 	}
+
 	// Validate seconds.
 	secs := parsed.Unix()
 	if secs < minTimestampSeconds {
@@ -798,14 +978,36 @@ func setFieldByName(message proto.Message, name string, value protoreflect.Value
 	return true
 }
 
+func evalDuration(node *yaml.Node, unm *unmarshaler, parseErr error) (*durationpb.Duration, error) {
+	val, celErr := unm.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			return nil, fmt.Errorf("invalid CEL expression: %w", celErr)
+		}
+		return nil, parseErr
+	}
+
+	if durVal, ok := val.Value().(time.Duration); ok {
+		return durationpb.New(durVal), nil
+	}
+	if val.Type() == cel.IntType {
+		return nil, parseErr
+	}
+
+	return nil, fmt.Errorf("expected duration, got %v", val.Type())
+}
+
 func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
 	if node.Kind != yaml.ScalarNode || len(node.Value) == 0 || isNull(node) {
 		return false
 	}
 	duration, err := ParseDuration(node.Value)
 	if err != nil {
-		unm.addError(node, err)
-		return true
+		duration, err = evalDuration(node, unm, err)
+		if err != nil {
+			unm.addError(node, err)
+			return true
+		}
 	}
 
 	if value, ok := message.(*durationpb.Duration); ok {
@@ -819,6 +1021,24 @@ func unmarshalDurationMsg(unm *unmarshaler, node *yaml.Node, message proto.Messa
 		setFieldByName(message, "nanos", protoreflect.ValueOfInt32(duration.GetNanos()))
 }
 
+func (u *unmarshaler) evalTimestamp(node *yaml.Node, timestamp *timestamppb.Timestamp, parseErr error) error {
+	val, celErr := u.celEval(node)
+	if celErr != nil {
+		if node.Tag == celTag {
+			return fmt.Errorf("invalid CEL expression: %w", celErr)
+		}
+		return fmt.Errorf("invalid timestamp: %w", parseErr)
+	}
+
+	if timeVal, ok := val.Value().(time.Time); ok {
+		timestamp.Seconds = timeVal.Unix()
+		timestamp.Nanos = int32(timeVal.Nanosecond()) //nolint:gosec
+		return nil
+	}
+
+	return fmt.Errorf("expected timestamp, got %v", val.Type())
+}
+
 func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Message) bool {
 	if node.Kind != yaml.ScalarNode || len(node.Value) == 0 || isNull(node) {
 		return false
@@ -827,10 +1047,17 @@ func unmarshalTimestampMsg(unm *unmarshaler, node *yaml.Node, message proto.Mess
 	if !ok {
 		timestamp = &timestamppb.Timestamp{}
 	}
+
 	err := parseTimestamp(node.Value, timestamp)
 	if err != nil {
-		unm.addErrorf(node, "invalid timestamp: %v", err)
-	} else if !ok {
+		err = unm.evalTimestamp(node, timestamp, err)
+		if err != nil {
+			unm.addError(node, err)
+			return true
+		}
+	}
+
+	if !ok {
 		return setFieldByName(message, "seconds", protoreflect.ValueOfInt64(timestamp.GetSeconds())) &&
 			setFieldByName(message, "nanos", protoreflect.ValueOfInt32(timestamp.GetNanos()))
 	}
@@ -883,10 +1110,10 @@ func dynSetListValue(message proto.Message, list *structpb.ListValue) bool {
 	values := message.ProtoReflect().Mutable(valuesFld).List()
 	for _, item := range list.GetValues() {
 		value := values.NewElement()
+		values.Append(value)
 		if !dynSetValue(value.Message().Interface(), item) {
 			return false
 		}
-		values.Append(value)
 	}
 	return true
 }
