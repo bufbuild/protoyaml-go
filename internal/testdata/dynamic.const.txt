@@ -10,7 +10,7 @@ internal/testdata/dynamic.const.yaml:16:12 expected bool, got "null"
   16 |     value: null
   16 | ...........^
 
-internal/testdata/dynamic.const.yaml:19:12 invalid integer: strconv.ParseUint: parsing "true": invalid syntax
+internal/testdata/dynamic.const.yaml:19:12 invalid integer: invalid number, expected digit
   19 |     value: true
   19 | ...........^
 
@@ -34,7 +34,7 @@ internal/testdata/dynamic.const.yaml:46:30 invalid integer: precision loss
   46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
   46 | .............................^
 
-internal/testdata/dynamic.const.yaml:46:35 invalid integer: strconv.ParseUint: parsing "hi": invalid syntax
+internal/testdata/dynamic.const.yaml:46:35 invalid integer: invalid number, expected digit
   46 |     repeated_int32: [1, "1", 1.5, hi, Infinity, NaN]
   46 | ..................................^
 
