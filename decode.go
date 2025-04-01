@@ -418,7 +418,7 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 
 func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
 	names := make([]protoreflect.Name, 0, fields.Len())
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		names = append(names, fields.Get(i).Name())
 		if i > 5 {
 			names = append(names, "...")
@@ -430,7 +430,7 @@ func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
 
 func getEnumValueNames(values protoreflect.EnumValueDescriptors) []protoreflect.Name {
 	names := make([]protoreflect.Name, 0, values.Len())
-	for i := 0; i < values.Len(); i++ {
+	for i := range values.Len() {
 		names = append(names, values.Get(i).Name())
 		if i > 5 {
 			names = append(names, "...")
@@ -549,7 +549,6 @@ func (u *unmarshaler) findField(key string, msgDesc protoreflect.MessageDescript
 	}
 	num, err := strconv.ParseInt(key, 10, 32)
 	if err == nil && num > 0 && num <= math.MaxInt32 {
-		//nolint:gosec // we just checked on previous line so not overflow risk
 		if field := fields.ByNumber(protoreflect.FieldNumber(num)); field != nil {
 			return field, nil
 		}
@@ -1106,7 +1105,7 @@ func parseFieldPath(path string) ([]string, error) {
 }
 
 func parseNextFieldName(path string) (string, string) {
-	for i := 0; i < len(path); i++ {
+	for i := range len(path) {
 		switch path[i] {
 		case '.':
 			return path[:i], path[i:]
@@ -1124,9 +1123,10 @@ func parseNextValue(path string) (string, string) {
 	if path[0] == '"' {
 		// Parse string.
 		for i := 1; i < len(path); i++ {
-			if path[i] == '\\' {
+			switch path[i] {
+			case '\\':
 				i++ // Skip escaped character.
-			} else if path[i] == '"' {
+			case '"':
 				result, err := strconv.Unquote(path[:i+1])
 				if err != nil {
 					return "", ""
@@ -1137,7 +1137,7 @@ func parseNextValue(path string) (string, string) {
 		return path, ""
 	}
 	// Go til the trailing ']'
-	for i := 0; i < len(path); i++ {
+	for i := range len(path) {
 		if path[i] == ']' {
 			return path[:i], path[i+1:]
 		}
@@ -1240,7 +1240,7 @@ var unitsNames = []string{"h", "m", "s", "ms", "us", "ns"}
 // parseDurationNest parses a single segment of the duration string.
 func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
 	// The next character must be [0-9.]
-	if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
+	if str[0] != '.' && ('0' > str[0] || str[0] > '9') {
 		return "", errors.New("invalid duration")
 	}
 	var err error

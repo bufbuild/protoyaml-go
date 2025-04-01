@@ -37,12 +37,14 @@ build: generate ## Build all packages
 .PHONY: lint
 lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint
 	go vet ./...
+	$(BIN)/golangci-lint fmt --diff
 	$(BIN)/golangci-lint run
 	buf lint
 	buf format -d --exit-code
 
 .PHONY: lintfix
 lintfix: $(BIN)/golangci-lint ## Automatically fix some lint errors
+	$(BIN)/golangci-lint fmt
 	$(BIN)/golangci-lint run --fix
 	buf format -w
 
@@ -79,11 +81,11 @@ $(BIN):
 	@mkdir -p $(BIN)
 
 $(BIN)/buf: $(BIN) Makefile
-	go install github.com/bufbuild/buf/cmd/buf@v1.41.0
+	go install github.com/bufbuild/buf/cmd/buf@v1.51.0
 
 $(BIN)/license-header: $(BIN) Makefile
 	go install \
-		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.41.0
+		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.51.0
 
 $(BIN)/golangci-lint: $(BIN) Makefile
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2
