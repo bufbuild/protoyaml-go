@@ -76,7 +76,6 @@ func TestParseDuration(t *testing.T) {
 		{Input: "1.5h1m1.5s1.5h1m1.5s", Expected: &durationpb.Duration{Seconds: 10923}},
 		{Input: "1h1m1s1ms1us1μs1µs1ns", Expected: &durationpb.Duration{Seconds: 3661, Nanos: 1003001}},
 	} {
-		testCase := testCase
 		t.Run(testCase.Input, func(t *testing.T) {
 			t.Parallel()
 			actual, err := ParseDuration(testCase.Input)
