@@ -1038,6 +1038,12 @@ func (u *unmarshaler) unmarshalScalarBool(node *yaml.Node, value *structpb.Value
 
 // Can be string, bytes, float, or int.
 func (u *unmarshaler) unmarshalScalarString(node *yaml.Node, value *structpb.Value) {
+	if node.Tag == "!!str" {
+		// Explicitly tagged string.
+		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
+		return
+	}
+
 	floatVal, err := strconv.ParseFloat(node.Value, 64)
 	if err != nil {
 		value.Kind = &structpb.Value_StringValue{StringValue: node.Value}
@@ -1050,7 +1056,7 @@ func (u *unmarshaler) unmarshalScalarString(node *yaml.Node, value *structpb.Val
 		return
 	}
 
-	// String, float, or int.
+	// Float or int.
 	u.unmarshalScalarFloat(node, value, floatVal)
 }
 
