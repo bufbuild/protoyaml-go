@@ -498,7 +498,7 @@ func parseUintLiteral(value string, allowBytes bool) (uint64, error) { //nolint:
 		return parsed, nil
 	}
 	if !allowBytes {
-		// Skip bytes parsing for enums.
+		// Skip bytes parsing for non-integer values.
 		return 0, uintErr
 	}
 
