@@ -344,7 +344,7 @@ func (u *unmarshaler) unmarshalEnum(node *yaml.Node, field protoreflect.FieldDes
 	// Get the enum value.
 	enumVal := enumDesc.Values().ByName(protoreflect.Name(node.Value))
 	if enumVal == nil {
-		lit, err := parseIntLiteral(node.Value)
+		lit, err := parseIntLiteral(node.Value, false)
 		if err != nil {
 			u.addErrorf(node, "unknown enum value %#v, expected one of %v", node.Value,
 				getEnumValueNames(enumDesc.Values()))
@@ -383,7 +383,7 @@ func (u *unmarshaler) unmarshalUnsigned(node *yaml.Node, bits int) uint64 {
 		return 0
 	}
 
-	parsed, err := parseUintLiteral(node.Value)
+	parsed, err := parseUintLiteral(node.Value, true)
 	if err != nil {
 		u.addErrorf(node, "invalid integer: %v", err)
 	}
@@ -399,7 +399,7 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 		return 0
 	}
 
-	lit, err := parseIntLiteral(node.Value)
+	lit, err := parseIntLiteral(node.Value, true)
 	if err != nil {
 		u.addErrorf(node, "invalid integer: %v", err)
 	}
@@ -461,7 +461,7 @@ func getNodeKind(kind yaml.Kind) string {
 // Conversion through JSON/YAML may have converted integers into floats, including
 // exponential notation. This function will parse those values back into integers
 // if possible.
-func parseUintLiteral(value string) (uint64, error) { //nolint:gocyclo
+func parseUintLiteral(value string, allowBytes bool) (uint64, error) { //nolint:gocyclo
 	// Try to parse as an unsigned integer.
 	base := 10
 	remaining := value
@@ -478,8 +478,8 @@ func parseUintLiteral(value string) (uint64, error) { //nolint:gocyclo
 			remaining = value[2:]
 		}
 	}
-	parsed, err := strconv.ParseUint(remaining, base, 64)
-	if err == nil {
+	parsed, uintErr := strconv.ParseUint(remaining, base, 64)
+	if uintErr == nil {
 		return parsed, nil
 	}
 
@@ -487,7 +487,7 @@ func parseUintLiteral(value string) (uint64, error) { //nolint:gocyclo
 	parsedFloat, floatErr := strconv.ParseFloat(value, 64)
 	if floatErr == nil {
 		if parsedFloat < 0 || math.IsInf(parsedFloat, 0) || math.IsNaN(parsedFloat) {
-			return 0, err
+			return 0, uintErr
 		}
 
 		// See if it's actually an integer.
@@ -497,15 +497,19 @@ func parseUintLiteral(value string) (uint64, error) { //nolint:gocyclo
 		}
 		return parsed, nil
 	}
+	if !allowBytes {
+		// Skip bytes parsing for enums.
+		return 0, uintErr
+	}
 
-	// Try to parse as bytes.
+	// Try to parse integers (int32, int64, uint32, uint64) as bytes.
 	byteCount := &big.Int{}
 	rem, bytesErr := parseBytes(value, byteCount)
 	switch {
 	case bytesErr != nil:
 		return 0, bytesErr // Likely a better error message.
 	case rem != "": // Extra characters.
-		return 0, err
+		return 0, uintErr
 	}
 	if byteCount.BitLen() > 64 {
 		return 0, errors.New("integer is too large")
@@ -528,14 +532,14 @@ func (lit intLit) checkI32(field protoreflect.FieldDescriptor) error {
 	return nil
 }
 
-func parseIntLiteral(value string) (intLit, error) {
+func parseIntLiteral(value string, allowBytes bool) (intLit, error) {
 	var lit intLit
 	if strings.HasPrefix(value, "-") {
 		lit.negative = true
 		value = value[1:]
 	}
 	var err error
-	lit.value, err = parseUintLiteral(value)
+	lit.value, err = parseUintLiteral(value, allowBytes)
 	return lit, err
 }
 
@@ -1083,7 +1087,7 @@ func (u *unmarshaler) unmarshalScalarString(node *yaml.Node, value *structpb.Val
 
 func (u *unmarshaler) unmarshalScalarFloat(node *yaml.Node, value *structpb.Value, floatVal float64) {
 	// Try to parse it as in integer, to see if the float representation is lossy.
-	lit, litErr := parseIntLiteral(node.Value)
+	lit, litErr := parseIntLiteral(node.Value, false)
 
 	// Check if we can represent this as a number.
 	floatUintVal := uint64(math.Abs(floatVal))      // The uint64 representation of the float.
@@ -1305,11 +1309,11 @@ func parseDurationNext(str string, totalNanos *big.Int) (string, error) {
 // bytesUnitNames is the list of byte unit names.
 // E is exabyte, P is petabyte, T is terabyte, G is gigabyte, M is megabyte, K is kilobyte.
 // The i suffix indicates a binary unit (e.g., Ki = 1024).
-var bytesUnitNames = []string{"K", "M", "G", "T", "P", "E", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei"}
+var bytesUnitNames = []string{"k", "M", "G", "T", "P", "E", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei"}
 
 // A map from unit to the number of bytes in that unit.
 var bytesPerUnitMap = map[string]int64{
-	"K":  1000,
+	"k":  1000,
 	"Ki": 1 << 10,
 	"M":  1000 * 1000,
 	"Mi": 1 << 20,
@@ -1354,6 +1358,9 @@ func parseBytes(str string, totalBytes *big.Int) (string, error) {
 }
 
 func parseNumberWithUnit(str string) (whole, frac uint64, scale *big.Int, unitName string, rem string, err error) {
+	if len(str) == 0 {
+		return 0, 0, nil, "", str, errors.New("expected number")
+	}
 	// The next character must be [0-9.]
 	if str[0] != '.' && (str[0] < '0' || str[0] > '9') {
 		return whole, frac, scale, unitName, str, errors.New("invalid number, expected digit")
