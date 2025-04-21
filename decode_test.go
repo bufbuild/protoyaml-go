@@ -30,31 +30,31 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type testCustomUnmarshaler struct{}
+type testCustomUnmarshaller struct{}
 
-var _ CustomUnmarshaler = (*testCustomUnmarshaler)(nil)
+var _ CustomUnmarshaller = (*testCustomUnmarshaller)(nil)
 
-func (t *testCustomUnmarshaler) Unmarshal(node *yaml.Node, msg proto.Message) (bool, error) {
+func (t *testCustomUnmarshaller) Unmarshal(node *yaml.Node, msg proto.Message) (bool, error) {
 	if node.Kind != yaml.ScalarNode {
 		return false, nil
 	}
-	ts, ok := msg.(*timestamppb.Timestamp)
+	protoTs, ok := msg.(*timestamppb.Timestamp)
 	if !ok {
 		return false, nil
 	}
 
 	switch strings.ToLower(node.Value) {
 	case "epoch":
-		proto.Reset(ts)
+		proto.Reset(protoTs)
 		return true, nil
 	case "now":
-		proto.Merge(ts, timestamppb.Now())
+		proto.Merge(protoTs, timestamppb.Now())
 		return true, nil
 	case "tomorrow":
-		proto.Merge(ts, timestamppb.New(time.Now().Add(24*time.Hour)))
+		proto.Merge(protoTs, timestamppb.New(time.Now().Add(24*time.Hour)))
 		return true, nil
 	case "yesterday":
-		proto.Merge(ts, timestamppb.New(time.Now().Add(-24*time.Hour)))
+		proto.Merge(protoTs, timestamppb.New(time.Now().Add(-24*time.Hour)))
 		return true, nil
 	}
 	return false, nil
@@ -63,7 +63,7 @@ func (t *testCustomUnmarshaler) Unmarshal(node *yaml.Node, msg proto.Message) (b
 func TestCustomUnmarshal(t *testing.T) {
 	t.Parallel()
 	options := UnmarshalOptions{
-		CustomUnmarshaler: &testCustomUnmarshaler{},
+		CustomUnmarshaller: &testCustomUnmarshaller{},
 	}
 	for _, testCase := range []struct {
 		Input string
