@@ -44,12 +44,6 @@ var (
 	wktUnmarshalers map[protoreflect.FullName]customUnmarshaler
 )
 
-// Validator is an interface for validating a Protobuf message produced from a given YAML node.
-type Validator interface {
-	// Validate the given message.
-	Validate(message proto.Message) error
-}
-
 // UnmarshalOptions is a configurable YAML format parser for Protobuf messages.
 type UnmarshalOptions struct {
 	// The path for the data being unmarshaled.
@@ -58,6 +52,8 @@ type UnmarshalOptions struct {
 	Path string
 	// Validator is a validator to run after unmarshaling a message.
 	Validator Validator
+	// CustomUnmarshaler is a custom unmarshaler to use for specific message types.
+	CustomUnmarshaler CustomUnmarshaler
 	// Resolver is the Protobuf type resolver to use.
 	Resolver interface {
 		protoregistry.MessageTypeResolver
@@ -71,6 +67,29 @@ type UnmarshalOptions struct {
 	// DiscardUnknown specifies whether to discard unknown fields instead of
 	// returning an error.
 	DiscardUnknown bool
+}
+
+// Validator is an interface for validating a Protobuf message produced from a given YAML node.
+type Validator interface {
+	// Validate the given message.
+	Validate(message proto.Message) error
+}
+
+// CustomUnmarshaler is an interface for custom unmarshaling of Protobuf messages.
+type CustomUnmarshaler interface {
+	// Unmarshal the given node into the given message.
+	//
+	// Returns an error if the node is invalid for the message.
+	// Returns (true, nil) if the node was handled by the custom unmarshaler.
+	// Otherwise, returns (false, nil), to indicate that the node should be
+	// unmarshaled by the default unmarshaler.
+	//
+	// When unmarshaling a google.protobuf.Any message, the `@type` field is
+	// included in the node.
+	//
+	// The 'message' argument maybe [dynamicpb.Message] or a concrete message type
+	// depending on the [UnmarshalOptions].Resolver used.
+	Unmarshal(node *yaml.Node, message proto.Message) (bool, error)
 }
 
 // Unmarshal a Protobuf message from the given YAML data.
@@ -665,6 +684,14 @@ func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node
 
 // Unmarshal the given yaml node into the given proto.Message.
 func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool) {
+	if u.options.CustomUnmarshaler != nil {
+		if ok, err := u.options.CustomUnmarshaler.Unmarshal(node, message); err != nil {
+			u.addError(node, err)
+			return
+		} else if ok {
+			return // Custom unmarshaler handled the decoding.
+		}
+	}
 	// Check for a custom unmarshaler
 	if custom, ok := wktUnmarshalers[message.ProtoReflect().Descriptor().FullName()]; ok {
 		valueNode := u.findNodeForCustom(node, forAny)

@@ -15,7 +15,9 @@
 package protoyaml
 
 import (
+	"strings"
 	"testing"
+	"time"
 
 	testv1 "buf.build/go/protoyaml/internal/gen/proto/buf/protoyaml/test/v1"
 	"github.com/google/go-cmp/cmp"
@@ -24,7 +26,65 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"gopkg.in/yaml.v3"
 )
+
+type testCustomUnmarshaler struct{}
+
+var _ CustomUnmarshaler = (*testCustomUnmarshaler)(nil)
+
+func (t *testCustomUnmarshaler) Unmarshal(node *yaml.Node, msg proto.Message) (bool, error) {
+	if node.Kind != yaml.ScalarNode {
+		return false, nil
+	}
+	ts, ok := msg.(*timestamppb.Timestamp)
+	if !ok {
+		return false, nil
+	}
+
+	switch strings.ToLower(node.Value) {
+	case "epoch":
+		proto.Reset(ts)
+		return true, nil
+	case "now":
+		proto.Merge(ts, timestamppb.Now())
+		return true, nil
+	case "tomorrow":
+		proto.Merge(ts, timestamppb.New(time.Now().Add(24*time.Hour)))
+		return true, nil
+	case "yesterday":
+		proto.Merge(ts, timestamppb.New(time.Now().Add(-24*time.Hour)))
+		return true, nil
+	}
+	return false, nil
+}
+
+func TestCustomUnmarshal(t *testing.T) {
+	t.Parallel()
+	options := UnmarshalOptions{
+		CustomUnmarshaler: &testCustomUnmarshaler{},
+	}
+	for _, testCase := range []struct {
+		Input string
+		Time  time.Time
+	}{
+		{Input: "epoch", Time: time.UnixMicro(0)},
+		{Input: "now", Time: time.Now()},
+		{Input: "tomorrow", Time: time.Now().Add(24 * time.Hour)},
+		{Input: "yesterday", Time: time.Now().Add(-24 * time.Hour)},
+		{Input: "2023-10-01T00:00:00Z", Time: time.Date(2023, 10, 1, 0, 0, 0, 0, time.UTC)},
+	} {
+		t.Run(testCase.Input, func(t *testing.T) {
+			t.Parallel()
+			actual := &timestamppb.Timestamp{}
+			err := options.Unmarshal([]byte(testCase.Input), actual)
+			require.NoError(t, err)
+			delta := actual.AsTime().Sub(testCase.Time)
+			assert.LessOrEqual(t, delta.Seconds(), 10.0)
+		})
+	}
+}
 
 func TestParseDuration(t *testing.T) {
 	t.Parallel()
