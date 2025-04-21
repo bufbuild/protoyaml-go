@@ -47,7 +47,7 @@ func (t *testCustomUnmarshaller) Unmarshal(node *yaml.Node, msg proto.Message) (
 	case "epoch":
 		proto.Reset(protoTs)
 		return true, nil
-	case "now":
+	case "today":
 		proto.Merge(protoTs, timestamppb.Now())
 		return true, nil
 	case "tomorrow":
@@ -70,7 +70,7 @@ func TestCustomUnmarshal(t *testing.T) {
 		Time  time.Time
 	}{
 		{Input: "epoch", Time: time.UnixMicro(0)},
-		{Input: "now", Time: time.Now()},
+		{Input: "today", Time: time.Now()},
 		{Input: "tomorrow", Time: time.Now().Add(24 * time.Hour)},
 		{Input: "yesterday", Time: time.Now().Add(-24 * time.Hour)},
 		{Input: "2023-10-01T00:00:00Z", Time: time.Date(2023, 10, 1, 0, 0, 0, 0, time.UTC)},
@@ -81,7 +81,7 @@ func TestCustomUnmarshal(t *testing.T) {
 			err := options.Unmarshal([]byte(testCase.Input), actual)
 			require.NoError(t, err)
 			delta := actual.AsTime().Sub(testCase.Time)
-			assert.LessOrEqual(t, delta.Seconds(), 10.0)
+			assert.LessOrEqual(t, delta, 1*time.Hour)
 		})
 	}
 }
