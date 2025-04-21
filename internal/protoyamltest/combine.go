@@ -66,7 +66,7 @@ func InterestingTestValues() []*proto3.TestAllTypes {
 		)
 	}
 	fields := (&proto3.TestAllTypes{}).ProtoReflect().Descriptor().Fields()
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		interestingValues = append(interestingValues,
 			interestingFieldValues(fields.Get(i))...)
 	}
@@ -78,7 +78,7 @@ func interestingMessageFieldValues(field protoreflect.FieldDescriptor) []*proto3
 	switch {
 	case field.IsList():
 		listVal := &proto3.TestAllTypes{}
-		for j := 0; j < 3; j++ {
+		for j := range 3 {
 			newVal := listVal.ProtoReflect().Get(field).List().NewElement()
 			PopulateMessage(newVal.Message().Interface(), int64(j))
 			listVal.ProtoReflect().Mutable(field).List().Append(newVal)
@@ -293,8 +293,8 @@ func interestingFieldValues(field protoreflect.FieldDescriptor) []*proto3.TestAl
 
 func interestingEnumValues(enum protoreflect.EnumDescriptor) []protoreflect.EnumNumber {
 	values := enum.Values()
-	result := []protoreflect.EnumNumber{}
-	for i := 0; i < values.Len(); i++ {
+	var result []protoreflect.EnumNumber
+	for i := range values.Len() {
 		result = append(result, values.Get(i).Number())
 	}
 	if enum.FullName() != "google.protobuf.NullValue" {
@@ -332,7 +332,7 @@ func interestingUnsigned(bits int) []uint64 {
 }
 
 func interestingFloats(bits uint8) []float64 {
-	result := []float64{}
+	var result []float64
 
 	// Zeros
 	result = append(result, 1/math.Inf(1), -1/math.Inf(1))
@@ -407,7 +407,7 @@ func interestingStrings() []string {
 
 func interestingBytes() [][]byte {
 	// All the interesting strings
-	result := [][]byte{}
+	var result [][]byte
 	for _, s := range interestingStrings() {
 		result = append(result, []byte(s))
 	}

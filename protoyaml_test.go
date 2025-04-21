@@ -55,7 +55,6 @@ func TestParseFieldPath(t *testing.T) {
 		{Path: `foo["b\"ar"].baz[0]`, Expect: []string{"foo", "b\"ar", "baz", "0"}},
 		{Path: `foo["b.ar"].baz`, Expect: []string{"foo", "b.ar", "baz"}},
 	} {
-		testCase := testCase
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 			result, err := parseFieldPath(testCase.Path)
@@ -143,11 +142,13 @@ func TestValue_Dynamic(t *testing.T) {
 	testValueDynamicRoundTrip(t, "true\n")
 	testValueDynamicRoundTrip(t, "false\n")
 	testValueDynamicRoundTrip(t, "1\n")
+	testValueDynamicRoundTrip(t, "\"1\"\n")
 	testValueDynamicRoundTrip(t, "foo\n")
 	testValueDynamicRoundTrip(t, "[]\n")
 	testValueDynamicRoundTrip(t, "{}\n")
 	testValueDynamicRoundTrip(t, "foo: bar\n")
 	testValueDynamicRoundTrip(t, "foo: 1\n")
+	testValueDynamicRoundTrip(t, "foo: \"1\"\n")
 	testValueDynamicRoundTrip(t, "foo: true\n")
 	testValueDynamicRoundTrip(t, "foo: false\n")
 	testValueDynamicRoundTrip(t, "foo: null\n")
@@ -243,7 +244,6 @@ func TestInfNanIntegers(t *testing.T) {
 		"single_int64: -Infinity",
 		"single_int64: NaN",
 	} {
-		testCase := testCase
 		t.Run(testCase, func(t *testing.T) {
 			t.Parallel()
 			data := []byte(testCase)
@@ -259,7 +259,6 @@ func TestAnyValue(t *testing.T) {
 	for _, testCase := range []string{
 		"{}", "1", "[1, \"hi\"]",
 	} {
-		testCase := testCase
 		t.Run(testCase, func(t *testing.T) {
 			t.Parallel()
 			data := []byte(`{"@type": "type.googleapis.com/google.protobuf.Value", "value": ` + testCase + `}`)
@@ -290,7 +289,6 @@ func TestCombinatorial(t *testing.T) {
 	t.Parallel()
 	cases := protoyamltest.InterestingTestValues()
 	for i, c := range cases {
-		c := c
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			t.Parallel()
 			testRoundTrip(t, c)
@@ -300,8 +298,7 @@ func TestCombinatorial(t *testing.T) {
 
 func TestFuzz(t *testing.T) {
 	t.Parallel()
-	for i := int64(0); i < 100; i++ {
-		i := i
+	for i := range int64(100) {
 		t.Run(strconv.FormatInt(i, 10), func(t *testing.T) {
 			t.Parallel()
 			msg := &proto3.TestAllTypes{}

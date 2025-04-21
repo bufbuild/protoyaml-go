@@ -24,6 +24,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// protovalidateValidator is a temporary adapter that works with protovalidate-go v0.9.2 and later versions.
+// Newer versions (v0.9.3+) take functional options to the validate method so are incompatible w/ protoyaml's Validator.
+type protovalidateValidator struct {
+	validator protovalidate.Validator
+}
+
+func (p *protovalidateValidator) Validate(message proto.Message) error {
+	return p.validator.Validate(message)
+}
+
 // GenGoldenContent generates golden content for the given file path and data.
 //
 // If the data is invalid, the error message is returned as the golden content.
@@ -35,7 +45,7 @@ func GenGoldenContent(filePath string, data []byte) (string, error) {
 	}
 
 	options := protoyaml.UnmarshalOptions{
-		Validator: validator,
+		Validator: &protovalidateValidator{validator: validator},
 		Path:      filePath,
 	}
 	var val proto.Message

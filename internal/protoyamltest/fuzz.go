@@ -87,7 +87,7 @@ func populateMessage(rnd *rand.Rand, msg proto.Message, depth int) {
 
 	// For each field, decide whether to set it
 	fields := msg.ProtoReflect().Descriptor().Fields()
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		field := fields.Get(i)
 		if field.ContainingOneof() == nil {
 			populateField(rnd, field, msg, depth+1)
@@ -96,7 +96,7 @@ func populateMessage(rnd *rand.Rand, msg proto.Message, depth int) {
 
 	// For each oneof, decide which field to set.
 	oneofs := msg.ProtoReflect().Descriptor().Oneofs()
-	for i := 0; i < oneofs.Len(); i++ {
+	for i := range oneofs.Len() {
 		oneof := oneofs.Get(i)
 		oneofFields := oneof.Fields()
 		idx := rnd.Intn(oneofFields.Len())
@@ -123,7 +123,7 @@ func populateList(rnd *rand.Rand, field protoreflect.FieldDescriptor, list proto
 		return
 	}
 	length := rnd.Intn(10)
-	for i := 0; i < length; i++ {
+	for range length {
 		switch field.Kind() {
 		case protoreflect.MessageKind, protoreflect.GroupKind:
 			msg := list.NewElement()
@@ -154,7 +154,7 @@ func populateMap(rnd *rand.Rand, field protoreflect.FieldDescriptor, mapVal prot
 		}
 	default:
 		length := rnd.Intn(3)
-		for i := 0; i < length; i++ {
+		for range length {
 			key := populateScalar(rnd, keyField)
 			populateMapValue(rnd, valueField, key.MapKey(), mapVal, depth+1)
 		}
