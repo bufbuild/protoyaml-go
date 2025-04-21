@@ -145,3 +145,4 @@ values:
   - single_int32: 1Ai
   - single_int32: 1.1
   - single_int32: 1Mi1K
+  - single_int32: 0x2.p10

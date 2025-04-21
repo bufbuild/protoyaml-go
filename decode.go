@@ -461,25 +461,26 @@ func getNodeKind(kind yaml.Kind) string {
 // Conversion through JSON/YAML may have converted integers into floats, including
 // exponential notation. This function will parse those values back into integers
 // if possible.
-func parseUintLiteral(value string) (uint64, error) {
+func parseUintLiteral(value string) (uint64, error) { //nolint:gocyclo
 	// Try to parse as an unsigned integer.
 	base := 10
+	remaining := value
 	if len(value) >= 2 && strings.HasPrefix(value, "0") {
 		switch value[1] {
 		case 'x', 'X':
 			base = 16
-			value = value[2:]
+			remaining = value[2:]
 		case 'o', 'O':
 			base = 8
-			value = value[2:]
+			remaining = value[2:]
 		case 'b', 'B':
 			base = 2
-			value = value[2:]
+			remaining = value[2:]
 		}
 	}
-	parsed, err := strconv.ParseUint(value, base, 64)
-	if err == nil || base != 10 {
-		return parsed, err
+	parsed, err := strconv.ParseUint(remaining, base, 64)
+	if err == nil {
+		return parsed, nil
 	}
 
 	// Try to parse as an unsigned integer encoded as a float.
@@ -1354,7 +1355,7 @@ func parseBytes(str string, totalBytes *big.Int) (string, error) {
 
 func parseNumberWithUnit(str string) (whole, frac uint64, scale *big.Int, unitName string, rem string, err error) {
 	// The next character must be [0-9.]
-	if !(str[0] == '.' || '0' <= str[0] && str[0] <= '9') {
+	if str[0] != '.' && (str[0] < '0' || str[0] > '9') {
 		return whole, frac, scale, unitName, str, errors.New("invalid number, expected digit")
 	}
 	var pre bool // Whether we have seen a digit before the dot.
