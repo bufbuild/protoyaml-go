@@ -30,11 +30,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type testCustomUnmarshaller struct{}
+type testCustomUnmarshaler struct{}
 
-var _ CustomUnmarshaller = (*testCustomUnmarshaller)(nil)
+var _ CustomUnmarshaler = (*testCustomUnmarshaler)(nil)
 
-func (t *testCustomUnmarshaller) Unmarshal(node *yaml.Node, msg proto.Message) (bool, error) {
+func (t *testCustomUnmarshaler) Unmarshal(node *yaml.Node, msg proto.Message) (bool, error) {
 	if node.Kind != yaml.ScalarNode {
 		return false, nil
 	}
@@ -63,7 +63,7 @@ func (t *testCustomUnmarshaller) Unmarshal(node *yaml.Node, msg proto.Message) (
 func TestCustomUnmarshal(t *testing.T) {
 	t.Parallel()
 	options := UnmarshalOptions{
-		CustomUnmarshaller: &testCustomUnmarshaller{},
+		CustomUnmarshaler: &testCustomUnmarshaler{},
 	}
 	for _, testCase := range []struct {
 		Input string
