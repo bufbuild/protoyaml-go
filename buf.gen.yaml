@@ -1,11 +1,13 @@
-version: v1
+version: v2
 managed:
   enabled: true
-  go_package_prefix:
-    default: buf.build/go/protoyaml/internal/gen/proto
-    except:
-      - buf.build/bufbuild/protovalidate
+  disable:
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
+  override:
+    - file_option: go_package_prefix
+      value: buf.build/go/protoyaml/internal/gen/proto
 plugins:
-  - plugin: buf.build/protocolbuffers/go:v1.36.6
+  - remote: buf.build/protocolbuffers/go:v1.36.6
     out: internal/gen/proto
     opt: paths=source_relative
