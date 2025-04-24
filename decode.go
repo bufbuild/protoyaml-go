@@ -69,8 +69,9 @@ type UnmarshalOptions struct {
 	// returning an error.
 	DiscardUnknown bool
 
-	// StrictEnums disabled implicit enum prefixes.
-	// If set, enum value names must match exactly.
+	// StrictEnums disables implicit enum prefixes.
+	//
+	// When true, enum value names must match exactly.
 	// Otherwise, enum value names can omit the standard prefix. For example:
 	//
 	//  enum Foo {
