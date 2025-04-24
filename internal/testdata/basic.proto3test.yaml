@@ -136,3 +136,16 @@ values:
       value: 1
   - single_bytes: "nopad+"
   - single_bytes: "web-safe__"
+  - single_fixed64: 1E
+  - single_fixed64: 1.0Mi
+  - single_fixed64: 1.1Gi
+  - single_fixed64: 1000Ei
+  - single_int32: 1k
+  - single_int32: -1Ki
+  - single_int32: -1Ti
+  - single_int32: 1Ai
+  - single_int32: 1.1
+  - single_int32: 1Mi1Ki
+  - single_int32: 0x2.p10
+  - single_fixed64: ""
+  - standalone_enum: 1k
