@@ -25,10 +25,17 @@ message Proto2TestValue {
   oneof oneof_value {
     string oneof_string_value = 1;
     int32 oneof_int32_value = 2;
+    Proto2TestEnum oneof_enum_value = 3;
   }
 }
 
 extend Proto2Test {
   optional string p2t_string_ext = 100;
   repeated string p2t_repeated_string_ext = 101;
+}
+
+enum Proto2TestEnum {
+  PROTO2_TEST_ENUM_UNSPECIFIED = 0;
+  PROTO2_TEST_ENUM_VALUE_1 = 1;
+  PROTO2_TEST_ENUM_VALUE_2 = 2;
 }

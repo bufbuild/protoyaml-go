@@ -7,3 +7,6 @@ values:
   - oneof_int32_value: 1
   - oneof_string_value: hi
     oneof_int32_value: 1
+  - oneof_enum_value: PROTO2_TEST_ENUM_VALUE_1
+  - oneof_enum_value: PROTO2_TEST_ENUM_VALUE_Other
+  - oneof_enum_value: VALUE_1
