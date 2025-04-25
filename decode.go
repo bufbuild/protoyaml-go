@@ -1506,7 +1506,7 @@ func getStandardEnumPrefix(str string) string {
 			output[len(output)-1] != '_' &&
 			((i < len(str)-1 && !isSnakeCaseNewWord(rune(str[i+1]), true) && !isDelimiter(rune(str[i+1]))) ||
 				(unicode.IsLower(rune(str[i-1])))):
-			output += "_" + strings.ToUpper(string(chr))
+			output += "_" + unicode.ToUpper(chr)
 		case !isDelimiter(chr), output[len(output)-1] != '_':
 			output += strings.ToUpper(string(chr))
 		}
