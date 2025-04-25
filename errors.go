@@ -56,5 +56,5 @@ type violationError struct {
 
 // Error prints the field path, message, and constraint ID.
 func (v *violationError) Error() string {
-	return protovalidate.FieldPathString(v.Violation.GetField()) + ": " + v.Violation.GetMessage() + " (" + v.Violation.GetConstraintId() + ")"
+	return protovalidate.FieldPathString(v.Violation.GetField()) + ": " + v.Violation.GetMessage() + " (" + v.Violation.GetRuleId() + ")"
 }
