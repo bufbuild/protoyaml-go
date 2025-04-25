@@ -205,21 +205,22 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		var versionField protoreflect.FieldDescriptor
 		for i := 1; i < len(node.Content); i += 2 {
 			keyNode := node.Content[i-1]
-			valueNode := node.Content[i]
-			if keyNode.Kind == yaml.ScalarNode && keyNode.Value == "version" {
-				ignoreFields = append(ignoreFields, "version")
-				versionField = fields.ByName(protoreflect.Name(valueNode.Value))
-				if versionField == nil {
-					unm.addErrorf(valueNode, "unknown field %#v, expected one of %v", valueNode.Value, getFieldNames(fields))
-					return errors.Join(unm.errors...)
-				}
-				if versionField.Kind() != protoreflect.MessageKind {
-					unm.addErrorf(node, "expected message field for version, got %v", versionField.Kind())
-					return errors.Join(unm.errors...)
-				}
-				message = message.ProtoReflect().Mutable(versionField).Message().Interface()
-				break
+			if keyNode.Kind != yaml.ScalarNode || keyNode.Value != "version" {
+				continue
 			}
+			ignoreFields = append(ignoreFields, "version")
+			valueNode := node.Content[i]
+			versionField = fields.ByName(protoreflect.Name(valueNode.Value))
+			if versionField == nil {
+				unm.addErrorf(valueNode, "unknown field %#v, expected one of %v", valueNode.Value, getFieldNames(fields))
+				return errors.Join(unm.errors...)
+			}
+			if versionField.Kind() != protoreflect.MessageKind {
+				unm.addErrorf(node, "expected message field for version, got %v", versionField.Kind())
+				return errors.Join(unm.errors...)
+			}
+			message = message.ProtoReflect().Mutable(versionField).Message().Interface()
+			break
 		}
 	}
 	unm.unmarshalMessage(node, message, false, ignoreFields...)
