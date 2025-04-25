@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -67,7 +68,37 @@ type UnmarshalOptions struct {
 	// DiscardUnknown specifies whether to discard unknown fields instead of
 	// returning an error.
 	DiscardUnknown bool
+
+	// VersionKind specifies if the yaml has a version field that determines
+	// which field in the message to unmarshal into.
+	//
+	// For example:
+	//	 version: v1
+	//	 foo: bar
+	//
+	// Can be unmarshaled into a message with a field "v1":
+	//
+	//   message Foo {
+	//     oneof version {
+	//       FooV1 v1 = 1;
+	//       FooV2 v2 = 2;
+	//     }
+	//   }
+	//
+	//   message FooV1 {
+	//     string foo = 1;
+	//   }
+	VersionKind VersionKind
 }
+
+// VersionKind specifies the kind of version used in the YAML file.
+type VersionKind int
+
+const (
+	NoVersion VersionKind = iota
+	OptionalVersion
+	RequiredVersion
+)
 
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
 type Validator interface {
@@ -178,8 +209,37 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		}
 		node = node.Content[0]
 	}
-
-	unm.unmarshalMessage(node, message, false)
+	var ignoreFields []string
+	if o.VersionKind != NoVersion {
+		fields := message.ProtoReflect().Descriptor().Fields()
+		var versionField protoreflect.FieldDescriptor
+		for i := 1; i < len(node.Content); i += 2 {
+			keyNode := node.Content[i-1]
+			valueNode := node.Content[i]
+			if keyNode.Kind == yaml.ScalarNode && keyNode.Value == "version" {
+				ignoreFields = append(ignoreFields, "version")
+				versionField = fields.ByName(protoreflect.Name(valueNode.Value))
+				if versionField == nil {
+					unm.addErrorf(valueNode, "unknown field %#v, expected one of %v", valueNode.Value, getFieldNames(fields))
+					return errors.Join(unm.errors...)
+				}
+				break
+			}
+		}
+		if versionField == nil {
+			if o.VersionKind == RequiredVersion || fields.Len() == 0 {
+				unm.addErrorf(node, "expected version field")
+				return errors.Join(unm.errors...)
+			}
+			versionField = message.ProtoReflect().Descriptor().Fields().Get(0)
+		}
+		if versionField.Kind() != protoreflect.MessageKind {
+			unm.addErrorf(node, "expected message field for version, got %v", versionField.Kind())
+			return errors.Join(unm.errors...)
+		}
+		message = message.ProtoReflect().Mutable(versionField).Message().Interface()
+	}
+	unm.unmarshalMessage(node, message, false, ignoreFields...)
 	if unm.validator != nil {
 		err := unm.validator.Validate(message)
 		var verr *protovalidate.ValidationError
@@ -708,7 +768,7 @@ func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node
 }
 
 // Unmarshal the given yaml node into the given proto.Message.
-func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool) {
+func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool, ignoreFields ...string) {
 	if u.options.CustomUnmarshaler != nil {
 		if ok, err := u.options.CustomUnmarshaler.Unmarshal(node, message); err != nil {
 			u.addError(node, err)
@@ -734,14 +794,18 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 			message.ProtoReflect().Descriptor().FullName(), getNodeKind(node.Kind))
 		return
 	}
-	u.unmarshalMessageFields(node, message, forAny)
+	if forAny {
+		ignoreFields = append(ignoreFields, atTypeFieldName)
+	}
+	u.unmarshalMessageFields(node, message, ignoreFields...)
 }
 
-func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, forAny bool) {
+func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Message, ignoreFields ...string) {
 	// Decode the fields
 	msgDesc := message.ProtoReflect().Descriptor()
-	for i := 0; i < len(node.Content); i += 2 {
-		keyNode := node.Content[i]
+	for i := 1; i < len(node.Content); i += 2 {
+		keyNode := node.Content[i-1]
+		valueNode := node.Content[i]
 		var key string
 		switch keyNode.Kind {
 		case yaml.ScalarNode:
@@ -759,8 +823,8 @@ func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Mess
 			continue
 		}
 
-		if forAny && key == atTypeFieldName {
-			continue // Skip the @type field for Any messages
+		if slices.Contains(ignoreFields, key) {
+			continue
 		}
 		field, err := u.findField(key, msgDesc)
 		switch {
@@ -771,7 +835,6 @@ func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Mess
 		case err != nil:
 			u.addError(keyNode, err)
 		default:
-			valueNode := node.Content[i+1]
 			u.unmarshalField(valueNode, field, message)
 		}
 	}

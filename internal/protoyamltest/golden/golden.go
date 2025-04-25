@@ -58,6 +58,11 @@ func GenGoldenContent(filePath string, data []byte) (string, error) {
 		testCase := &testv1.Proto3Test{}
 		err = options.Unmarshal(data, testCase)
 		val = testCase
+	case strings.HasSuffix(filePath, ".test.yaml"):
+		testCase := &testv1.Test{}
+		options.VersionKind = protoyaml.OptionalVersion
+		err = options.Unmarshal(data, testCase)
+		val = testCase
 	case strings.HasSuffix(filePath, ".const.yaml"):
 		testCase := &testv1.ConstValues{}
 		err = options.Unmarshal(data, testCase)

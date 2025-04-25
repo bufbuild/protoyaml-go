@@ -1,4 +1,4 @@
-# Constant values to test.
+version: pb3
 values:
   - single_bool: true
   - single_bool: false
