@@ -68,20 +68,6 @@ type UnmarshalOptions struct {
 	// DiscardUnknown specifies whether to discard unknown fields instead of
 	// returning an error.
 	DiscardUnknown bool
-
-	// StrictEnums disables implicit enum prefixes.
-	//
-	// When true, enum value names must match exactly.
-	// Otherwise, enum value names can omit the standard prefix. For example:
-	//
-	//  enum Foo {
-	//    FOO_UNSPECIFIED = 0;
-	//    FOO_BAR = 1;
-	//  }
-	//
-	//  foo: BAR     // valid if StrictEnums is false
-	//  foo: FOO_BAR // always valid
-	StrictEnums bool
 }
 
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
@@ -378,7 +364,7 @@ func (u *unmarshaler) unmarshalEnum(node *yaml.Node, field protoreflect.FieldDes
 
 	// Get the enum value.
 	enumVal := enumDesc.Values().ByName(protoreflect.Name(node.Value))
-	if enumVal == nil && !u.options.StrictEnums {
+	if enumVal == nil {
 		stdPrefix := getStandardEnumPrefix(string(enumDesc.Name()))
 		enumVal = enumDesc.Values().ByName(protoreflect.Name(stdPrefix + node.Value))
 	}
@@ -456,10 +442,7 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 }
 
 func (u *unmarshaler) getEnumValueNames(enum protoreflect.EnumDescriptor) []protoreflect.Name {
-	var prefix string
-	if !u.options.StrictEnums {
-		prefix = getStandardEnumPrefix(string(enum.Name()))
-	}
+	prefix := getStandardEnumPrefix(string(enum.Name()))
 	names := make([]protoreflect.Name, 0, enum.Values().Len())
 	for i := range enum.Values().Len() {
 		name, _ := strings.CutPrefix(string(enum.Values().Get(i).Name()), prefix)
