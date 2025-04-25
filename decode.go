@@ -1508,7 +1508,7 @@ func getStandardEnumPrefix(str string) string {
 				(unicode.IsLower(rune(str[i-1])))):
 			output += "_" + unicode.ToUpper(chr)
 		case !isDelimiter(chr), output[len(output)-1] != '_':
-			output += strings.ToUpper(string(chr))
+			output += unicode.ToUpper(chr)
 		}
 	}
 	return output + "_"
