@@ -33,7 +33,7 @@ type testCustomUnmarshaler struct{}
 
 var _ CustomUnmarshaler = (*testCustomUnmarshaler)(nil)
 
-func (t *testCustomUnmarshaler) Unmarshal(value string, msg proto.Message) (bool, error) {
+func (t *testCustomUnmarshaler) UnmarshalMessage(value string, msg proto.Message) (bool, error) {
 	protoTs, ok := msg.(*timestamppb.Timestamp)
 	if !ok {
 		return false, nil

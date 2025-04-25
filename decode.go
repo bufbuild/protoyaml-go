@@ -77,7 +77,7 @@ type Validator interface {
 
 // CustomUnmarshaler is an interface for custom unmarshaling of Protobuf messages.
 type CustomUnmarshaler interface {
-	// Unmarshal the given string into the given message.
+	// UnmarshalMessage unmarshals the given string into the given message.
 	//
 	// Returns an error if the string is invalid for the message.
 	// Returns (true, nil) if unmarshaling was successful.
@@ -89,7 +89,7 @@ type CustomUnmarshaler interface {
 	//
 	// The 'message' argument maybe [dynamicpb.Message] or a concrete message type
 	// depending on the [UnmarshalOptions].Resolver used.
-	Unmarshal(value string, message proto.Message) (bool, error)
+	UnmarshalMessage(value string, message proto.Message) (bool, error)
 }
 
 // Unmarshal a Protobuf message from the given YAML data.
@@ -710,7 +710,7 @@ func (u *unmarshaler) findNodeForCustom(node *yaml.Node, forAny bool) *yaml.Node
 // Unmarshal the given yaml node into the given proto.Message.
 func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, forAny bool) {
 	if u.options.CustomUnmarshaler != nil && node.Kind == yaml.ScalarNode {
-		if ok, err := u.options.CustomUnmarshaler.Unmarshal(node.Value, message); err != nil {
+		if ok, err := u.options.CustomUnmarshaler.UnmarshalMessage(node.Value, message); err != nil {
 			u.addError(node, err)
 			return
 		} else if ok {
