@@ -69,8 +69,7 @@ type UnmarshalOptions struct {
 	// returning an error.
 	DiscardUnknown bool
 
-	// VersionKind specifies if the yaml has a version field that determines
-	// which field in the message to unmarshal into.
+	// AllowVersion specifies if the yaml supports a version field.
 	//
 	// For example:
 	//	 version: v1
@@ -88,17 +87,8 @@ type UnmarshalOptions struct {
 	//   message FooV1 {
 	//     string foo = 1;
 	//   }
-	VersionKind VersionKind
+	AllowVersion bool
 }
-
-// VersionKind specifies the kind of version used in the YAML file.
-type VersionKind int
-
-const (
-	NoVersion VersionKind = iota
-	OptionalVersion
-	RequiredVersion
-)
 
 // Validator is an interface for validating a Protobuf message produced from a given YAML node.
 type Validator interface {
@@ -210,7 +200,7 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 		node = node.Content[0]
 	}
 	var ignoreFields []string
-	if o.VersionKind != NoVersion {
+	if o.AllowVersion {
 		fields := message.ProtoReflect().Descriptor().Fields()
 		var versionField protoreflect.FieldDescriptor
 		for i := 1; i < len(node.Content); i += 2 {
@@ -223,21 +213,14 @@ func (o UnmarshalOptions) unmarshalNode(node *yaml.Node, message proto.Message, 
 					unm.addErrorf(valueNode, "unknown field %#v, expected one of %v", valueNode.Value, getFieldNames(fields))
 					return errors.Join(unm.errors...)
 				}
+				if versionField.Kind() != protoreflect.MessageKind {
+					unm.addErrorf(node, "expected message field for version, got %v", versionField.Kind())
+					return errors.Join(unm.errors...)
+				}
+				message = message.ProtoReflect().Mutable(versionField).Message().Interface()
 				break
 			}
 		}
-		if versionField == nil {
-			if o.VersionKind == RequiredVersion || fields.Len() == 0 {
-				unm.addErrorf(node, "expected version field")
-				return errors.Join(unm.errors...)
-			}
-			versionField = message.ProtoReflect().Descriptor().Fields().Get(0)
-		}
-		if versionField.Kind() != protoreflect.MessageKind {
-			unm.addErrorf(node, "expected message field for version, got %v", versionField.Kind())
-			return errors.Join(unm.errors...)
-		}
-		message = message.ProtoReflect().Mutable(versionField).Message().Interface()
 	}
 	unm.unmarshalMessage(node, message, false, ignoreFields...)
 	if unm.validator != nil {

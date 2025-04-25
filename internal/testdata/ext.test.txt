@@ -1,0 +1,11 @@
+internal/testdata/ext.test.yaml:2:1 unknown field "[undefined]", expected one of [values]
+   2 | '[undefined]': hi
+   2 | ^
+
+internal/testdata/ext.test.yaml:5:1 expected scalar, got sequence
+   5 | [buf.protoyaml.test.v1.p2t_repeated_string_ext, hi]: [hi]
+   5 | ^
+
+internal/testdata/ext.test.yaml:10:24 field oneof_string_value is already set for oneof oneof_value
+  10 |     oneof_int32_value: 1
+  10 | .......................^
