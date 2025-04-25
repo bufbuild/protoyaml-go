@@ -1493,7 +1493,7 @@ func leadingInt(str string) (result uint64, rem string, pre bool, err error) {
 }
 
 func getStandardEnumPrefix(str string) string {
-	output := ""
+	var output strings.Builder
 	str = strings.TrimFunc(str, isDelimiter)
 	for i, chr := range str {
 		if isDelimiter(chr) {
@@ -1501,17 +1501,19 @@ func getStandardEnumPrefix(str string) string {
 		}
 		switch {
 		case i == 0:
-			output += strings.ToUpper(string(chr))
+			output.WriteRune(unicode.ToUpper(chr))
 		case isSnakeCaseNewWord(chr, false) &&
-			output[len(output)-1] != '_' &&
+			output.String()[output.Len()-1] != '_' &&
 			((i < len(str)-1 && !isSnakeCaseNewWord(rune(str[i+1]), true) && !isDelimiter(rune(str[i+1]))) ||
 				(unicode.IsLower(rune(str[i-1])))):
-			output += "_" + unicode.ToUpper(chr)
-		case !isDelimiter(chr), output[len(output)-1] != '_':
-			output += unicode.ToUpper(chr)
+			output.WriteRune('_')
+			output.WriteRune(unicode.ToUpper(chr))
+		case !isDelimiter(chr), output.String()[output.Len()-1] != '_':
+			output.WriteRune(unicode.ToUpper(chr))
 		}
 	}
-	return output + "_"
+	output.WriteRune('_')
+	return output.String()
 }
 
 func isSnakeCaseNewWord(r rune, newWordOnDigits bool) bool {
