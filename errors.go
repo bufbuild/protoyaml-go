@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	"gopkg.in/yaml.v3"
 )
 

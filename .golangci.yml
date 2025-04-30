@@ -27,8 +27,8 @@ linters:
           allow:
             - $gostd
             - github.com/bufbuild/protoyaml-go/decode
-            - github.com/bufbuild/protovalidate-go
             - buf.build/gen/go/bufbuild/protovalidate
+            - buf.build/go/protovalidate
             - google.golang.org/protobuf
             - gopkg.in/yaml.v3
     errcheck:
