@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
+	"buf.build/go/protovalidate"
 	"buf.build/go/protoyaml"
 	testv1 "buf.build/go/protoyaml/internal/gen/proto/buf/protoyaml/test/v1"
-	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
 )
 

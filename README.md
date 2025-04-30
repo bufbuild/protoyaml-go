@@ -113,7 +113,7 @@ import (
   "log"
 
   "buf.build/go/protoyaml"
-  "github.com/bufbuild/protovalidate-go"
+  "buf.build/go/protovalidate"
 )
 
 func main() {
