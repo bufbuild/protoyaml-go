@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"buf.build/go/protovalidate"
 	"google.golang.org/protobuf/proto"
@@ -360,17 +361,22 @@ func (u *unmarshaler) unmarshalEnum(node *yaml.Node, field protoreflect.FieldDes
 	if enumDesc.FullName() == "google.protobuf.NullValue" {
 		return 0
 	}
+
 	// Get the enum value.
 	enumVal := enumDesc.Values().ByName(protoreflect.Name(node.Value))
+	if enumVal == nil {
+		stdPrefix := getStandardEnumPrefix(string(enumDesc.Name()))
+		enumVal = enumDesc.Values().ByName(protoreflect.Name(stdPrefix + node.Value))
+	}
 	if enumVal == nil {
 		lit, err := parseIntLiteral(node.Value, false)
 		if err != nil {
 			u.addErrorf(node, "unknown enum value %#v, expected one of %v", node.Value,
-				getEnumValueNames(enumDesc.Values()))
+				u.getEnumValueNames(enumDesc))
 			return 0
 		} else if err := lit.checkI32(field); err != nil {
 			u.addErrorf(node, "%w, expected one of %v", err,
-				getEnumValueNames(enumDesc.Values()))
+				u.getEnumValueNames(enumDesc))
 			return 0
 		}
 		//nolint:gosec // not overflow risk since list.checkI32 call above does range check
@@ -435,10 +441,12 @@ func (u *unmarshaler) unmarshalInteger(node *yaml.Node, bits int) int64 {
 	return int64(lit.value)
 }
 
-func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
-	names := make([]protoreflect.Name, 0, fields.Len())
-	for i := range fields.Len() {
-		names = append(names, fields.Get(i).Name())
+func (u *unmarshaler) getEnumValueNames(enum protoreflect.EnumDescriptor) []protoreflect.Name {
+	prefix := getStandardEnumPrefix(string(enum.Name()))
+	names := make([]protoreflect.Name, 0, enum.Values().Len())
+	for i := range enum.Values().Len() {
+		name, _ := strings.CutPrefix(string(enum.Values().Get(i).Name()), prefix)
+		names = append(names, protoreflect.Name(name))
 		if i > 5 {
 			names = append(names, "...")
 			break
@@ -447,10 +455,10 @@ func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
 	return names
 }
 
-func getEnumValueNames(values protoreflect.EnumValueDescriptors) []protoreflect.Name {
-	names := make([]protoreflect.Name, 0, values.Len())
-	for i := range values.Len() {
-		names = append(names, values.Get(i).Name())
+func getFieldNames(fields protoreflect.FieldDescriptors) []protoreflect.Name {
+	names := make([]protoreflect.Name, 0, fields.Len())
+	for i := range fields.Len() {
+		names = append(names, fields.Get(i).Name())
 		if i > 5 {
 			names = append(names, "...")
 			break
@@ -1465,6 +1473,41 @@ func leadingInt(str string) (result uint64, rem string, pre bool, err error) {
 		result = newResult
 	}
 	return result, str[i:], i > 0, nil
+}
+
+func getStandardEnumPrefix(str string) string {
+	var output strings.Builder
+	str = strings.TrimFunc(str, isDelimiter)
+	for i, chr := range str {
+		if isDelimiter(chr) {
+			chr = '_'
+		}
+		switch {
+		case i == 0:
+			output.WriteRune(unicode.ToUpper(chr))
+		case isSnakeCaseNewWord(chr, false) &&
+			output.String()[output.Len()-1] != '_' &&
+			((i < len(str)-1 && !isSnakeCaseNewWord(rune(str[i+1]), true) && !isDelimiter(rune(str[i+1]))) ||
+				(unicode.IsLower(rune(str[i-1])))):
+			output.WriteRune('_')
+			output.WriteRune(unicode.ToUpper(chr))
+		case !isDelimiter(chr), output.String()[output.Len()-1] != '_':
+			output.WriteRune(unicode.ToUpper(chr))
+		}
+	}
+	output.WriteRune('_')
+	return output.String()
+}
+
+func isSnakeCaseNewWord(r rune, newWordOnDigits bool) bool {
+	if newWordOnDigits {
+		return unicode.IsUpper(r) || unicode.IsDigit(r)
+	}
+	return unicode.IsUpper(r)
+}
+
+func isDelimiter(r rune) bool {
+	return r == '.' || r == '-' || r == '_' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
 
 func init() { //nolint:gochecknoinits
