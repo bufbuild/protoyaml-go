@@ -610,6 +610,10 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 		}
 	}
 
+	if node.Kind == yaml.AliasNode {
+		node = node.Alias
+	}
+
 	switch {
 	case field.IsList():
 		u.unmarshalList(node, field, message.ProtoReflect().Mutable(field).List())
@@ -626,6 +630,10 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 
 // Unmarshal the list, with explicit handling for lists of messages.
 func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDescriptor, list protoreflect.List) {
+	// Could be an empty list
+	if isNull(node) {
+		return
+	}
 	if u.checkKind(node, yaml.SequenceNode) {
 		switch field.Kind() {
 		case protoreflect.MessageKind, protoreflect.GroupKind:
@@ -636,6 +644,9 @@ func (u *unmarshaler) unmarshalList(node *yaml.Node, field protoreflect.FieldDes
 			}
 		default:
 			for _, itemNode := range node.Content {
+				if itemNode.Kind == yaml.AliasNode {
+					itemNode = itemNode.Alias
+				}
 				val, ok := u.unmarshalScalar(itemNode, field, false)
 				if !ok {
 					continue
@@ -656,6 +667,14 @@ func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDesc
 	for i := 1; i < len(node.Content); i += 2 {
 		keyNode := node.Content[i-1]
 		valueNode := node.Content[i]
+		// Unfold any merge
+		if isMerge(keyNode) {
+			if valueNode.Kind == yaml.AliasNode {
+				valueNode = valueNode.Alias
+			}
+			u.unmarshalMap(valueNode, field, mapVal)
+			continue
+		}
 		mapKey, ok := u.unmarshalScalar(keyNode, mapKeyField, true)
 		if !ok {
 			continue
@@ -677,6 +696,10 @@ func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDesc
 
 func isNull(node *yaml.Node) bool {
 	return node.Tag == "!!null"
+}
+
+func isMerge(node *yaml.Node) bool {
+	return node.Tag == "!!merge"
 }
 
 // Resolve the node to be used with the custom unmarshaler. Returns nil if the
@@ -729,6 +752,9 @@ func (u *unmarshaler) unmarshalMessage(node *yaml.Node, message proto.Message, f
 	if isNull(node) {
 		return // Null is always allowed for messages
 	}
+	if node.Kind == yaml.AliasNode {
+		node = node.Alias
+	}
 	if node.Kind != yaml.MappingNode {
 		u.addErrorf(node, "expected fields for %v, got %v",
 			message.ProtoReflect().Descriptor().FullName(), getNodeKind(node.Kind))
@@ -745,6 +771,15 @@ func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Mess
 		var key string
 		switch keyNode.Kind {
 		case yaml.ScalarNode:
+			// Unfold if it's a merge node
+			if isMerge(keyNode) {
+				valueNode := node.Content[i+1]
+				if valueNode.Kind == yaml.AliasNode {
+					valueNode = valueNode.Alias
+				}
+				u.unmarshalMessageFields(valueNode, message, forAny)
+				continue
+			}
 			key = keyNode.Value
 		case yaml.SequenceNode:
 			// Interpret single element sequences as extension field.
@@ -1006,6 +1041,10 @@ func (u *unmarshaler) unmarshalValue(
 	node *yaml.Node,
 	value *structpb.Value,
 ) {
+	// If the node is an alias, use the real node
+	if node.Kind == yaml.AliasNode {
+		node = node.Alias
+	}
 	// Unmarshal the value.
 	switch node.Kind {
 	case yaml.SequenceNode: // A list.

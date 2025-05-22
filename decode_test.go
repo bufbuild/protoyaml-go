@@ -214,3 +214,110 @@ values:
 	require.NoError(t, err)
 	require.Equal(t, "hi", actual.GetValues()[0].GetOneofStringValue())
 }
+
+func TestEmptySequence(t *testing.T) {
+	data := []byte(`
+sequence: `)
+	actual := &testv1.EdgeTestSequence{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Empty(t, actual.Sequence)
+}
+
+func TestAliasScalar(t *testing.T) {
+	data := []byte(`
+foo: &alias value
+bar: *alias`)
+	actual := &testv1.EdgeTestTwoScalar{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Equal(t, "value", actual.Foo)
+	require.Equal(t, "value", actual.Bar)
+}
+
+func TestAliasSequenceItem(t *testing.T) {
+	data := []byte(`
+foo:
+  - &alias item
+bar:
+  - *alias`)
+	actual := &testv1.EdgeTestTwoSequence{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Len(t, actual.Foo, 1)
+	require.Equal(t, "item", actual.Foo[0])
+	require.Len(t, actual.Bar, 1)
+	require.Equal(t, "item", actual.Bar[0])
+}
+
+func TestAliasSequenceMessageItem(t *testing.T) {
+	data := []byte(`
+nested:
+  - &alias
+    foo: value
+    bar: value
+second_nested:
+  - *alias`)
+	actual := &testv1.EdgeTestNestedMessageSequence{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Len(t, actual.Nested, 1)
+	require.Equal(t, "value", actual.Nested[0].Foo)
+	require.Equal(t, "value", actual.Nested[0].Bar)
+	require.Len(t, actual.SecondNested, 1)
+	require.Equal(t, "value", actual.SecondNested[0].Foo)
+	require.Equal(t, "value", actual.SecondNested[0].Bar)
+}
+
+func TestAliasMap(t *testing.T) {
+	data := []byte(`
+foo: &alias
+  key1: value
+  key2: value
+bar: *alias
+`)
+	actual := &testv1.EdgeTestTwoMap{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Len(t, actual.Foo, 2)
+	require.Equal(t, "value", actual.Foo["key1"])
+	require.Equal(t, "value", actual.Foo["key2"])
+	require.Len(t, actual.Bar, 2)
+	require.Equal(t, "value", actual.Bar["key1"])
+	require.Equal(t, "value", actual.Bar["key2"])
+}
+
+func TestMergeMap(t *testing.T) {
+	data := []byte(`
+foo: &alias
+  key1: value
+  key2: value
+bar:
+  << : *alias
+  key3: value
+  key4: value
+`)
+	actual := &testv1.EdgeTestTwoMap{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Len(t, actual.Foo, 2)
+	require.Len(t, actual.Bar, 4)
+}
+
+func TestMergeMessage(t *testing.T) {
+	data := []byte(`
+nested: &alias
+  foo: value
+  bar: value
+second_nested:
+  << : *alias
+  bar: another value
+`)
+	actual := &testv1.EdgeTestNestedMessage{}
+	err := Unmarshal(data, actual)
+	require.NoError(t, err)
+	require.Equal(t, "value", actual.Nested.Foo)
+	require.Equal(t, "value", actual.Nested.Bar)
+	require.Equal(t, "value", actual.SecondNested.Foo)
+	require.Equal(t, "another value", actual.SecondNested.Bar)
+}
