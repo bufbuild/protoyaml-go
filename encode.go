@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"go.yaml.in/yaml/v3"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"gopkg.in/yaml.v3"
 )
 
 // Marshal marshals the given message to YAML.

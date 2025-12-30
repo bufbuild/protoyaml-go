@@ -24,6 +24,7 @@ import (
 	"buf.build/go/protoyaml/internal/protoyamltest"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -32,7 +33,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gopkg.in/yaml.v3"
 )
 
 func TestParseFieldPath(t *testing.T) {
@@ -203,7 +203,7 @@ func TestYamlNewLineMaps(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Should be `"\n": "\n"`, but its garbled.
-	if string(data) != "? |4+\n: |4+\n" {
+	if string(data) != "? |4+\n\n: |4+\n\n" {
 		t.Fatalf("Expected garbled output, got %s", string(data))
 	}
 }
