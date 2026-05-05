@@ -37,8 +37,8 @@ linters:
             - github.com/bufbuild/protoyaml-go/decode
             - buf.build/gen/go/bufbuild/protovalidate
             - buf.build/go/protovalidate
+            - go.yaml.in/yaml/v3
             - google.golang.org/protobuf
-            - gopkg.in/yaml.v3
     errcheck:
       check-type-assertions: true
     forbidigo:
