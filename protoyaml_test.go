@@ -234,6 +234,24 @@ func TestNullValueEnum(t *testing.T) {
 	}
 }
 
+func TestNullMessageField(t *testing.T) {
+	t.Parallel()
+	actual := &proto3.TestAllTypes{}
+	if err := Unmarshal([]byte("singleTimestamp: null\n"), actual); err != nil {
+		t.Fatal(err)
+	}
+	if actual.GetSingleTimestamp() != nil {
+		t.Fatalf("Expected nil, got %v", actual.GetSingleTimestamp())
+	}
+	expected := &proto3.TestAllTypes{}
+	if err := protojson.Unmarshal([]byte(`{"singleTimestamp": null}`), expected); err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(expected, actual, protocmp.Transform()); diff != "" {
+		t.Fatalf("unexpected diff:\n%s", diff)
+	}
+}
+
 func TestInfNanIntegers(t *testing.T) {
 	t.Parallel()
 	for _, testCase := range []string{

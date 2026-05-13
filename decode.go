@@ -616,6 +616,9 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 	case field.IsMap():
 		u.unmarshalMap(node, field, message.ProtoReflect().Mutable(field).Map())
 	case field.Message() != nil:
+		if isNull(node) && field.Message().FullName() != "google.protobuf.Value" {
+			return // Null clears a message field.
+		}
 		u.unmarshalMessage(node, message.ProtoReflect().Mutable(field).Message().Interface(), false)
 	default:
 		if val, ok := u.unmarshalScalar(node, field, false); ok {
