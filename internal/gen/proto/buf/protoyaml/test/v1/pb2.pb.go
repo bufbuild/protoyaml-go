@@ -35,6 +35,65 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Proto2TestEnum int32
+
+const (
+	Proto2TestEnum_PROTO2_TEST_ENUM_UNSPECIFIED Proto2TestEnum = 0
+	Proto2TestEnum_PROTO2_TEST_ENUM_VALUE_1     Proto2TestEnum = 1
+	Proto2TestEnum_PROTO2_TEST_ENUM_VALUE_2     Proto2TestEnum = 2
+)
+
+// Enum value maps for Proto2TestEnum.
+var (
+	Proto2TestEnum_name = map[int32]string{
+		0: "PROTO2_TEST_ENUM_UNSPECIFIED",
+		1: "PROTO2_TEST_ENUM_VALUE_1",
+		2: "PROTO2_TEST_ENUM_VALUE_2",
+	}
+	Proto2TestEnum_value = map[string]int32{
+		"PROTO2_TEST_ENUM_UNSPECIFIED": 0,
+		"PROTO2_TEST_ENUM_VALUE_1":     1,
+		"PROTO2_TEST_ENUM_VALUE_2":     2,
+	}
+)
+
+func (x Proto2TestEnum) Enum() *Proto2TestEnum {
+	p := new(Proto2TestEnum)
+	*p = x
+	return p
+}
+
+func (x Proto2TestEnum) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Proto2TestEnum) Descriptor() protoreflect.EnumDescriptor {
+	return file_buf_protoyaml_test_v1_pb2_proto_enumTypes[0].Descriptor()
+}
+
+func (Proto2TestEnum) Type() protoreflect.EnumType {
+	return &file_buf_protoyaml_test_v1_pb2_proto_enumTypes[0]
+}
+
+func (x Proto2TestEnum) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Do not use.
+func (x *Proto2TestEnum) UnmarshalJSON(b []byte) error {
+	num, err := protoimpl.X.UnmarshalJSONEnum(x.Descriptor(), b)
+	if err != nil {
+		return err
+	}
+	*x = Proto2TestEnum(num)
+	return nil
+}
+
+// Deprecated: Use Proto2TestEnum.Descriptor instead.
+func (Proto2TestEnum) EnumDescriptor() ([]byte, []int) {
+	return file_buf_protoyaml_test_v1_pb2_proto_rawDescGZIP(), []int{0}
+}
+
 type Proto2Test struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Values          []*Proto2TestValue     `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
@@ -86,6 +145,7 @@ type Proto2TestValue struct {
 	//
 	//	*Proto2TestValue_OneofStringValue
 	//	*Proto2TestValue_OneofInt32Value
+	//	*Proto2TestValue_OneofEnumValue
 	OneofValue    isProto2TestValue_OneofValue `protobuf_oneof:"oneof_value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -146,6 +206,15 @@ func (x *Proto2TestValue) GetOneofInt32Value() int32 {
 	return 0
 }
 
+func (x *Proto2TestValue) GetOneofEnumValue() Proto2TestEnum {
+	if x != nil {
+		if x, ok := x.OneofValue.(*Proto2TestValue_OneofEnumValue); ok {
+			return x.OneofEnumValue
+		}
+	}
+	return Proto2TestEnum_PROTO2_TEST_ENUM_UNSPECIFIED
+}
+
 type isProto2TestValue_OneofValue interface {
 	isProto2TestValue_OneofValue()
 }
@@ -158,9 +227,15 @@ type Proto2TestValue_OneofInt32Value struct {
 	OneofInt32Value int32 `protobuf:"varint,2,opt,name=oneof_int32_value,json=oneofInt32Value,oneof"`
 }
 
+type Proto2TestValue_OneofEnumValue struct {
+	OneofEnumValue Proto2TestEnum `protobuf:"varint,3,opt,name=oneof_enum_value,json=oneofEnumValue,enum=buf.protoyaml.test.v1.Proto2TestEnum,oneof"`
+}
+
 func (*Proto2TestValue_OneofStringValue) isProto2TestValue_OneofValue() {}
 
 func (*Proto2TestValue_OneofInt32Value) isProto2TestValue_OneofValue() {}
+
+func (*Proto2TestValue_OneofEnumValue) isProto2TestValue_OneofValue() {}
 
 var file_buf_protoyaml_test_v1_pb2_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
@@ -196,11 +271,16 @@ const file_buf_protoyaml_test_v1_pb2_proto_rawDesc = "" +
 	"\x1fbuf/protoyaml/test/v1/pb2.proto\x12\x15buf.protoyaml.test.v1\"V\n" +
 	"\n" +
 	"Proto2Test\x12>\n" +
-	"\x06values\x18\x01 \x03(\v2&.buf.protoyaml.test.v1.Proto2TestValueR\x06values*\b\bd\x10\x80\x80\x80\x80\x02\"~\n" +
+	"\x06values\x18\x01 \x03(\v2&.buf.protoyaml.test.v1.Proto2TestValueR\x06values*\b\bd\x10\x80\x80\x80\x80\x02\"\xd1\x01\n" +
 	"\x0fProto2TestValue\x12.\n" +
 	"\x12oneof_string_value\x18\x01 \x01(\tH\x00R\x10oneofStringValue\x12,\n" +
-	"\x11oneof_int32_value\x18\x02 \x01(\x05H\x00R\x0foneofInt32ValueB\r\n" +
-	"\voneof_value:G\n" +
+	"\x11oneof_int32_value\x18\x02 \x01(\x05H\x00R\x0foneofInt32Value\x12Q\n" +
+	"\x10oneof_enum_value\x18\x03 \x01(\x0e2%.buf.protoyaml.test.v1.Proto2TestEnumH\x00R\x0eoneofEnumValueB\r\n" +
+	"\voneof_value*n\n" +
+	"\x0eProto2TestEnum\x12 \n" +
+	"\x1cPROTO2_TEST_ENUM_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18PROTO2_TEST_ENUM_VALUE_1\x10\x01\x12\x1c\n" +
+	"\x18PROTO2_TEST_ENUM_VALUE_2\x10\x02:G\n" +
 	"\x0ep2t_string_ext\x12!.buf.protoyaml.test.v1.Proto2Test\x18d \x01(\tR\fp2tStringExt:X\n" +
 	"\x17p2t_repeated_string_ext\x12!.buf.protoyaml.test.v1.Proto2Test\x18e \x03(\tR\x14p2tRepeatedStringExtB\xe4\x01\n" +
 	"\x19com.buf.protoyaml.test.v1B\bPb2ProtoP\x01ZFbuf.build/go/protoyaml/internal/gen/proto/buf/protoyaml/test/v1;testv1\xa2\x02\x03BPT\xaa\x02\x15Buf.Protoyaml.Test.V1\xca\x02\x15Buf\\Protoyaml\\Test\\V1\xe2\x02!Buf\\Protoyaml\\Test\\V1\\GPBMetadata\xea\x02\x18Buf::Protoyaml::Test::V1"
@@ -217,20 +297,23 @@ func file_buf_protoyaml_test_v1_pb2_proto_rawDescGZIP() []byte {
 	return file_buf_protoyaml_test_v1_pb2_proto_rawDescData
 }
 
+var file_buf_protoyaml_test_v1_pb2_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_buf_protoyaml_test_v1_pb2_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_buf_protoyaml_test_v1_pb2_proto_goTypes = []any{
-	(*Proto2Test)(nil),      // 0: buf.protoyaml.test.v1.Proto2Test
-	(*Proto2TestValue)(nil), // 1: buf.protoyaml.test.v1.Proto2TestValue
+	(Proto2TestEnum)(0),     // 0: buf.protoyaml.test.v1.Proto2TestEnum
+	(*Proto2Test)(nil),      // 1: buf.protoyaml.test.v1.Proto2Test
+	(*Proto2TestValue)(nil), // 2: buf.protoyaml.test.v1.Proto2TestValue
 }
 var file_buf_protoyaml_test_v1_pb2_proto_depIdxs = []int32{
-	1, // 0: buf.protoyaml.test.v1.Proto2Test.values:type_name -> buf.protoyaml.test.v1.Proto2TestValue
-	0, // 1: buf.protoyaml.test.v1.p2t_string_ext:extendee -> buf.protoyaml.test.v1.Proto2Test
-	0, // 2: buf.protoyaml.test.v1.p2t_repeated_string_ext:extendee -> buf.protoyaml.test.v1.Proto2Test
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	1, // [1:3] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: buf.protoyaml.test.v1.Proto2Test.values:type_name -> buf.protoyaml.test.v1.Proto2TestValue
+	0, // 1: buf.protoyaml.test.v1.Proto2TestValue.oneof_enum_value:type_name -> buf.protoyaml.test.v1.Proto2TestEnum
+	1, // 2: buf.protoyaml.test.v1.p2t_string_ext:extendee -> buf.protoyaml.test.v1.Proto2Test
+	1, // 3: buf.protoyaml.test.v1.p2t_repeated_string_ext:extendee -> buf.protoyaml.test.v1.Proto2Test
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	2, // [2:4] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_buf_protoyaml_test_v1_pb2_proto_init() }
@@ -241,19 +324,21 @@ func file_buf_protoyaml_test_v1_pb2_proto_init() {
 	file_buf_protoyaml_test_v1_pb2_proto_msgTypes[1].OneofWrappers = []any{
 		(*Proto2TestValue_OneofStringValue)(nil),
 		(*Proto2TestValue_OneofInt32Value)(nil),
+		(*Proto2TestValue_OneofEnumValue)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_buf_protoyaml_test_v1_pb2_proto_rawDesc), len(file_buf_protoyaml_test_v1_pb2_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   2,
 			NumExtensions: 2,
 			NumServices:   0,
 		},
 		GoTypes:           file_buf_protoyaml_test_v1_pb2_proto_goTypes,
 		DependencyIndexes: file_buf_protoyaml_test_v1_pb2_proto_depIdxs,
+		EnumInfos:         file_buf_protoyaml_test_v1_pb2_proto_enumTypes,
 		MessageInfos:      file_buf_protoyaml_test_v1_pb2_proto_msgTypes,
 		ExtensionInfos:    file_buf_protoyaml_test_v1_pb2_proto_extTypes,
 	}.Build()

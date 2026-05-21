@@ -214,3 +214,30 @@ values:
 	require.NoError(t, err)
 	require.Equal(t, "hi", actual.GetValues()[0].GetOneofStringValue())
 }
+
+func TestStandardEnumPrefix(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name   string
+		prefix string
+	}{
+		{name: "test", prefix: "TEST_"},
+		{name: "Test", prefix: "TEST_"},
+		{name: "TEST", prefix: "TEST_"},
+		{name: "test_test", prefix: "TEST_TEST_"},
+		{name: "Test_Test", prefix: "TEST_TEST_"},
+		{name: "TEST_TEST", prefix: "TEST_TEST_"},
+		{name: "testTest", prefix: "TEST_TEST_"},
+		{name: "TestTest", prefix: "TEST_TEST_"},
+		{name: "TESTTEST", prefix: "TESTTEST_"},
+		{name: "TESTTest", prefix: "TEST_TEST_"},
+		{name: "testTESTTest", prefix: "TEST_TEST_TEST_"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			actual := getStandardEnumPrefix(testCase.name)
+			assert.Equal(t, testCase.prefix, actual)
+		})
+	}
+}
