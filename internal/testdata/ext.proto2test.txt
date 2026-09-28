@@ -9,3 +9,7 @@ internal/testdata/ext.proto2test.yaml:4:1 expected scalar, got sequence
 internal/testdata/ext.proto2test.yaml:9:24 field oneof_string_value is already set for oneof oneof_value
    9 |     oneof_int32_value: 1
    9 | .......................^
+
+internal/testdata/ext.proto2test.yaml:11:23 unknown enum value "PROTO2_TEST_ENUM_VALUE_Other", expected one of [UNSPECIFIED VALUE_1 VALUE_2]
+  11 |   - oneof_enum_value: PROTO2_TEST_ENUM_VALUE_Other
+  11 | ......................^
