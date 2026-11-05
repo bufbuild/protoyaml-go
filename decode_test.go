@@ -163,7 +163,7 @@ func TestEditions(t *testing.T) {
 	t.Parallel()
 
 	expected := &testv1.EditionsTest{
-		Name: proto.String("foobar"),
+		Name: new("foobar"),
 		Nested: &testv1.EditionsTest_Nested{
 			Ids: []int64{0, 1, 1, 2, 3, 5, 8},
 		},

@@ -8,6 +8,6 @@ managed:
     - file_option: go_package_prefix
       value: buf.build/go/protoyaml/internal/gen/proto
 plugins:
-  - remote: buf.build/protocolbuffers/go:v1.36.6
+  - remote: buf.build/protocolbuffers/go:v1.36.12
     out: internal/gen/proto
     opt: paths=source_relative
