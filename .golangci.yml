@@ -6,9 +6,11 @@ linters:
     - err113            # way too noisy
     - exhaustive
     - exhaustruct
+    - exhaustruct_v5
     - funlen            # rely on code review to limit function length
     - gochecknoglobals
     - gocognit          # dubious "cognitive overhead" quantification
+    - gomodguard        # deprecated
     - inamedparam       # not standard style
     - interfacebloat    # many exceptions
     - ireturn           # "accept interfaces, return structs" isn't ironclad
@@ -68,6 +70,7 @@ linters:
       - std-error-handling
     rules:
       - linters:
+          - goconst
           - nestif
         path: _test.go
       - linters:
