@@ -34,16 +34,13 @@ type testCustomUnmarshaler struct{}
 
 var _ CustomUnmarshaler = (*testCustomUnmarshaler)(nil)
 
-func (t *testCustomUnmarshaler) Unmarshal(node *yaml.Node, msg proto.Message) (bool, error) {
-	if node.Kind != yaml.ScalarNode {
-		return false, nil
-	}
+func (t *testCustomUnmarshaler) UnmarshalMessage(value string, msg proto.Message) (bool, error) {
 	protoTs, ok := msg.(*timestamppb.Timestamp)
 	if !ok {
 		return false, nil
 	}
 
-	switch strings.ToLower(node.Value) {
+	switch strings.ToLower(value) {
 	case "epoch":
 		proto.Reset(protoTs)
 		return true, nil
