@@ -45,7 +45,7 @@ values:
     - single_string: "1.0"
     - single_string: "true"
     - single_string: "false"
-    - single_string: "null"
+    - {}
     - single_string: "null"
     - single_string: "1"
     - single_string: "\U0001F600"

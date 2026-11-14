@@ -252,6 +252,27 @@ func TestNullMessageField(t *testing.T) {
 	}
 }
 
+func TestNullField(t *testing.T) {
+	t.Parallel()
+	for _, field := range []string{
+		"singleInt32",
+		"singleString",
+		"singleBytes",
+		"standaloneEnum",
+		"repeatedInt32",
+		"mapStringString",
+	} {
+		t.Run(field, func(t *testing.T) {
+			t.Parallel()
+			actual := &proto3.TestAllTypes{}
+			require.NoError(t, Unmarshal([]byte(field+": null\n"), actual))
+			expected := &proto3.TestAllTypes{}
+			require.NoError(t, protojson.Unmarshal([]byte(`{"`+field+`": null}`), expected))
+			require.Empty(t, cmp.Diff(expected, actual, protocmp.Transform()))
+		})
+	}
+}
+
 func TestInfNanIntegers(t *testing.T) {
 	t.Parallel()
 	for _, testCase := range []string{

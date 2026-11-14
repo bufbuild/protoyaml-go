@@ -616,9 +616,6 @@ func (u *unmarshaler) unmarshalField(node *yaml.Node, field protoreflect.FieldDe
 	case field.IsMap():
 		u.unmarshalMap(node, field, message.ProtoReflect().Mutable(field).Map())
 	case field.Message() != nil:
-		if isNull(node) && field.Message().FullName() != "google.protobuf.Value" {
-			return // Null clears a message field.
-		}
 		u.unmarshalMessage(node, message.ProtoReflect().Mutable(field).Message().Interface(), false)
 	default:
 		if val, ok := u.unmarshalScalar(node, field, false); ok {
@@ -680,6 +677,15 @@ func (u *unmarshaler) unmarshalMap(node *yaml.Node, field protoreflect.FieldDesc
 
 func isNull(node *yaml.Node) bool {
 	return node.Tag == "!!null"
+}
+
+// Reports whether null is a value for the field instead of leaving it unset.
+func isNullValueField(field protoreflect.FieldDescriptor) bool {
+	if msg := field.Message(); msg != nil && msg.FullName() == "google.protobuf.Value" {
+		return true
+	}
+	enum := field.Enum()
+	return enum != nil && enum.FullName() == "google.protobuf.NullValue"
 }
 
 // Resolve the node to be used with the custom unmarshaler. Returns nil if the
@@ -775,6 +781,9 @@ func (u *unmarshaler) unmarshalMessageFields(node *yaml.Node, message proto.Mess
 			u.addError(keyNode, err)
 		default:
 			valueNode := node.Content[i+1]
+			if isNull(valueNode) && !isNullValueField(field) {
+				continue // Null leaves the field unset.
+			}
 			u.unmarshalField(valueNode, field, message)
 		}
 	}
