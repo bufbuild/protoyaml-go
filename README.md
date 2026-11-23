@@ -1,7 +1,6 @@
 # ProtoYAML
 
 [![Build](https://github.com/bufbuild/protoyaml-go/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/bufbuild/protoyaml-go/actions/workflows/ci.yaml)
-[![Report Card](https://goreportcard.com/badge/buf.build/go/protoyaml)](https://goreportcard.com/report/buf.build/go/protoyaml)
 [![GoDoc](https://pkg.go.dev/badge/buf.build/go/protoyaml.svg)](https://pkg.go.dev/buf.build/go/protoyaml)
 
 Marshal and unmarshal Protocol Buffers as YAML. Provides fine-grained error details with file, line, column and snippet information.
